@@ -36,7 +36,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void getPicking(View view) {
-        String url ="http://192.168.1.39/LaGranjaServices/api/picking/getOrCreate/" + editText_saleOrderNumber.getText() + "/";
+        String url ="http://192.168.1.29/LaGranjaServices/api/picking/getOrCreate/" + editText_saleOrderNumber.getText() + "/";
 
         JsonObjectRequest jsObjRequest = new JsonObjectRequest
                 (Request.Method.GET, url, null, new Response.Listener<JSONObject>() {

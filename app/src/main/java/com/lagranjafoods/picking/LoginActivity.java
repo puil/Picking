@@ -75,7 +75,7 @@ public class LoginActivity extends AppCompatActivity {
         progressDialog.setMessage("Autenticando...");
         progressDialog.show();
 
-        String url = "http://192.168.1.39/LaGranjaServices/login";
+        String url = "http://192.168.1.29/LaGranjaServices/login";
 
         StringWithHeadersRequest stringWithHeadersRequest = new StringWithHeadersRequest(
                 Request.Method.POST,
