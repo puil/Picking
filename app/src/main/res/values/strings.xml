@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Picking</string>
+    <string name="edit_saleOrderNumber">Número de pedido</string>
+    <string name="button_find">Buscar</string>
+</resources>
