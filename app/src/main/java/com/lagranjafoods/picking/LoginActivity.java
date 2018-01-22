@@ -7,6 +7,8 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
@@ -19,6 +21,7 @@ import com.lagranjafoods.picking.network.AppController;
 import com.lagranjafoods.picking.network.StringResponseWithHeader;
 import com.lagranjafoods.picking.network.StringWithHeadersRequest;
 
+import java.net.SocketException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -33,10 +36,9 @@ public class LoginActivity extends AppCompatActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // link the XML layout to this JAVA class
         setContentView(R.layout.activity_login);
+        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
 
-        //link graphical items to variables
         _userText = findViewById(R.id.input_user);
         _passwordText = findViewById(R.id.input_password);
         _loginButton = findViewById(R.id.btn_login);
@@ -75,7 +77,7 @@ public class LoginActivity extends AppCompatActivity {
         progressDialog.setMessage("Autenticando...");
         progressDialog.show();
 
-        String url = "http://192.168.1.29/LaGranjaServices/login";
+        String url = "http://192.168.1.39/LaGranjaServices/login";
 
         StringWithHeadersRequest stringWithHeadersRequest = new StringWithHeadersRequest(
                 Request.Method.POST,
@@ -101,7 +103,16 @@ public class LoginActivity extends AppCompatActivity {
                     @Override
                     public void onErrorResponse(VolleyError error) {
                         Log.e("Error on login", "Error detail: " + error);
-                        onLoginFailed();
+
+                        if (error.getCause() instanceof SocketException)
+                        {
+                            onServerUnreachable();
+                        }
+                        else
+                        {
+                            onLoginFailed();
+                        }
+
                         progressDialog.dismiss();
                     }
                 }
@@ -146,6 +157,12 @@ public class LoginActivity extends AppCompatActivity {
     public void onLoginFailed() {
         Log.d(TAG, "onLoginFailed");
         Toast.makeText(getBaseContext(), "Autenticación errónea", Toast.LENGTH_LONG).show();
+        _loginButton.setEnabled(true);
+    }
+
+    private void onServerUnreachable() {
+        Log.d(TAG, "OnServerUnreachable");
+        Toast.makeText(getBaseContext(), "No hay conexión con el servidor", Toast.LENGTH_LONG).show();
         _loginButton.setEnabled(true);
     }
 

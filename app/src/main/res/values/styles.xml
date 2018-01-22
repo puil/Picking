@@ -1,7 +1,30 @@
 <resources>
 
+    <style name="CustomWindowTitleBackground2">
+        <item name="android:background">#323331</item>
+    </style>
+
+    <style name="AppPuilThem" parent="Theme.AppCompat.Light.DarkActionBar">
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowNoTitle">false</item>
+        <item name="android:windowTitleSize">35dip</item>
+        <item name="android:windowTitleBackgroundStyle">@style/CustomWindowTitleBackground2</item>
+    </style>
+
+    <!-- Style to change arrow color in toolbar -->
+    <style name="ToolbarColoredBackArrow" parent="Theme.AppCompat.Light.DarkActionBar">
+        <item name="android:textColorSecondary">@color/white</item>
+    </style>
+
     <!-- Base application theme. -->
     <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+        <!-- Customize your theme here. -->
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
+    </style>
+
+    <style name="AppNoActionBarTheme" parent="Theme.AppCompat.Light.NoActionBar">
         <!-- Customize your theme here. -->
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
@@ -25,9 +48,7 @@
     </style>
 
     <style name="AppTheme.Dark.Dialog" parent="Theme.AppCompat.Dialog">
-        <item name="colorAccent">@color/white</item>
-        <item name="android:textColorPrimary">@color/iron</item>
-        <item name="android:background">@color/primary</item>
+
     </style>
 
 </resources>

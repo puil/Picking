@@ -1,5 +1,6 @@
 package com.lagranjafoods.picking;
 
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -7,22 +8,20 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 
-import com.android.volley.AuthFailureError;
 import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
-import com.android.volley.toolbox.JsonObjectRequest;
+import com.lagranjafoods.picking.models.PalletStateEnum;
+import com.lagranjafoods.picking.models.PickingHeader;
+import com.lagranjafoods.picking.models.PickingPallet;
+import com.lagranjafoods.picking.models.PickingResponse;
 import com.lagranjafoods.picking.network.AppController;
-
-import org.json.JSONObject;
+import com.lagranjafoods.picking.network.GsonRequest;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
-
-    public static final String EXTRA_MESSAGE = "com.lagranjafoods.picking.MESSAGE";
-
     EditText editText_saleOrderNumber;
     Button button;
 
@@ -33,43 +32,82 @@ public class MainActivity extends AppCompatActivity {
 
         editText_saleOrderNumber = findViewById(R.id.editSaleOrderNumber);
         button = findViewById(R.id.find_button);
+
+        editText_saleOrderNumber.setText("28035");
     }
 
     public void getPicking(View view) {
-        String url ="http://192.168.1.29/LaGranjaServices/api/picking/getOrCreate/" + editText_saleOrderNumber.getText() + "/";
+        String url ="http://192.168.1.39/LaGranjaServices/api/picking/getOrCreate/" + editText_saleOrderNumber.getText() + "/";
 
-        JsonObjectRequest jsObjRequest = new JsonObjectRequest
-                (Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
+        Map<String, String> headers = new HashMap<>();
+        String token = AppController.getInstance(getApplicationContext()).getToken();
+        headers.put("Token", token);
 
-                    @Override
-                    public void onResponse(JSONObject response) {
-                        showMessage("Response: " + response.toString());
-                    }
-                }, new Response.ErrorListener() {
+        final ProgressDialog progressDialog = new ProgressDialog(MainActivity.this, R.style.AppTheme_Dark_Dialog);
+        progressDialog.setIndeterminate(true);
+        progressDialog.setMessage("cargando...");
+        progressDialog.show();
 
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        showMessage(String.format("That didn't work! Error:\n%s", error.getMessage()));
-                    }
-                }) {
+        GsonRequest<PickingResponse> jsObjRequest = new GsonRequest<>(Request.Method.GET,
+                url, PickingResponse.class, headers, new Response.Listener<PickingResponse>() {
 
             @Override
-            public Map<String, String> getHeaders() throws AuthFailureError {
-                Map<String, String> params = new HashMap<String, String>();
-
-                String token = AppController.getInstance(getApplicationContext()).getToken();
-                params.put("Token", token);
-
-                return params;
+            public void onResponse(PickingResponse response) {
+                checkResponseAndStartPalletContentActivity(response);
+                progressDialog.dismiss();
             }
-        };
+        }, new Response.ErrorListener() {
+
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                showMessage(String.format("That didn't work! Error:\n%s", error.getMessage()));
+                progressDialog.dismiss();
+            }
+        });
 
         AppController.getInstance(this).addToRequestQueue(jsObjRequest);
     }
 
     private void showMessage(String message){
         Intent intent = new Intent(this, DisplayMessageActivity.class);
-        intent.putExtra(EXTRA_MESSAGE, message);
+        intent.putExtra(ExtraConstants.EXTRA_MESSAGE, message);
         startActivity(intent);
+    }
+
+    private void checkResponseAndStartPalletContentActivity(PickingResponse pickingResponse){
+        if (pickingResponse.isSuccess()){
+            PickingHeader pickingHeader = pickingResponse.getPickingHeader();
+
+            if (pickingHeader.getPallets().isEmpty()){
+                Intent intent = new Intent(this, PalletsActivity.class);
+                intent.putExtra(ExtraConstants.EXTRA_PICKING_HEADER, pickingHeader);
+                startActivity(intent);
+            }
+            else{
+                Intent intent = new Intent(this, PalletContentActivity.class);
+                intent.putExtra(ExtraConstants.EXTRA_PICKING_HEADER, pickingHeader);
+                intent.putExtra(ExtraConstants.EXTRA_PICKING_PALLET, getFirstActivePallet(pickingHeader));
+                startActivity(intent);
+            }
+        }
+        else {
+            showMessage(pickingResponse.getActionResultMessage());
+        }
+    }
+
+    private PickingPallet getFirstActivePallet(PickingHeader pickingHeader){
+        PickingPallet firstAvailablePallet = null;
+
+        for (PickingPallet pickingPallet : pickingHeader.getPallets()) {
+            if (pickingPallet.getState().equals(PalletStateEnum.Picking)){
+                firstAvailablePallet = pickingPallet;
+                break;
+            }
+        }
+
+        if (firstAvailablePallet == null)
+            firstAvailablePallet = pickingHeader.getPallets().get(0);
+
+        return firstAvailablePallet;
     }
 }

@@ -7,13 +7,20 @@ import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.toolbox.HttpHeaderParser;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
+import com.lagranjafoods.picking.models.PalletStateEnum;
+import com.lagranjafoods.picking.models.PickingActionResultEnum;
+import com.lagranjafoods.picking.network.deserializers.DateDeserializer;
+import com.lagranjafoods.picking.network.deserializers.PalletStateDeserializer;
+import com.lagranjafoods.picking.network.deserializers.PickingActionResultDeserializer;
 
 import java.io.UnsupportedEncodingException;
+import java.util.Date;
 import java.util.Map;
 
 public class GsonRequest<T> extends Request<T> {
-    private final Gson gson = new Gson();
+    private Gson gson;
     private final Class<T> clazz;
     private final Map<String, String> headers;
     private final Response.Listener<T> listener;
@@ -25,12 +32,19 @@ public class GsonRequest<T> extends Request<T> {
      * @param clazz Relevant class object, for Gson's reflection
      * @param headers Map of request headers
      */
-    public GsonRequest(String url, Class<T> clazz, Map<String, String> headers,
+    public GsonRequest(int method, String url, Class<T> clazz, Map<String, String> headers,
                        Response.Listener<T> listener, Response.ErrorListener errorListener) {
-        super(Method.GET, url, errorListener);
+        super(method, url, errorListener);
+
         this.clazz = clazz;
         this.headers = headers;
         this.listener = listener;
+
+        GsonBuilder gsonBuilder = new GsonBuilder();
+        gsonBuilder.registerTypeAdapter(PalletStateEnum.class, new PalletStateDeserializer() );
+        gsonBuilder.registerTypeAdapter(PickingActionResultEnum.class, new PickingActionResultDeserializer() );
+        gsonBuilder.registerTypeAdapter(Date.class, new DateDeserializer());
+        gson = gsonBuilder.create();
     }
 
     @Override
