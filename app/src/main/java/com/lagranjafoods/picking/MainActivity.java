@@ -33,7 +33,7 @@ public class MainActivity extends AppCompatActivity {
         editText_saleOrderNumber = findViewById(R.id.editSaleOrderNumber);
         button = findViewById(R.id.find_button);
 
-        editText_saleOrderNumber.setText("28035");
+        editText_saleOrderNumber.setText("28034");
     }
 
     public void getPicking(View view) {

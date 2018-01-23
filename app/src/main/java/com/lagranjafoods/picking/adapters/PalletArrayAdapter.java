@@ -5,9 +5,12 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
 import com.lagranjafoods.picking.R;
+import com.lagranjafoods.picking.models.PalletStateEnum;
 import com.lagranjafoods.picking.models.PickingPallet;
 
 import java.util.List;
@@ -31,8 +34,16 @@ public class PalletArrayAdapter extends ArrayAdapter<PickingPallet> {
         LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 
         View rowView = inflater.inflate(R.layout.list_pallets, parent, false);
-        TextView textView = rowView.findViewById(R.id.tvPalletNumber);
-        textView.setText(Integer.toString(values.get(position).getPalletNumber()));
+        PickingPallet pickingPallet = values.get(position);
+
+        TextView textView_palletNumber = rowView.findViewById(R.id.tvPalletNumber);
+        textView_palletNumber.setText(Integer.toString(pickingPallet.getPalletNumber()));
+
+        TextView textView_state = rowView.findViewById(R.id.tvPalletState);
+        textView_state.setText("(" + getStateText(pickingPallet.getState()) + ")");
+
+        ImageButton deleteButton = rowView.findViewById(R.id.deleteButton);
+        deleteButton.setTag(pickingPallet);
 
         return rowView;
     }
@@ -41,5 +52,22 @@ public class PalletArrayAdapter extends ArrayAdapter<PickingPallet> {
         this.values.clear();
         this.values.addAll(values);
         notifyDataSetChanged();
+    }
+
+    public boolean isEmpty(){
+        return this.values.isEmpty();
+    }
+
+    private String getStateText(PalletStateEnum palletStateEnum){
+        switch (palletStateEnum){
+            case Confirmed:
+                return "confirmado";
+            case Palletized:
+                return "paletizado";
+            case Shipped:
+                return "expedido";
+            default:
+                return "en curso";
+        }
     }
 }

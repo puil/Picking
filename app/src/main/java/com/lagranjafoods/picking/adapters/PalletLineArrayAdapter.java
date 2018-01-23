@@ -5,11 +5,13 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
 import com.lagranjafoods.picking.R;
 import com.lagranjafoods.picking.models.PickingPalletLine;
 
+import java.text.SimpleDateFormat;
 import java.util.List;
 
 /**
@@ -39,6 +41,15 @@ public class PalletLineArrayAdapter extends ArrayAdapter<PickingPalletLine> {
 
         TextView textView_productDescription = rowView.findViewById(R.id.tvProductDescription);
         textView_productDescription.setText(palletLine.getProductDescription());
+
+        TextView textView_lot = rowView.findViewById(R.id.tvLot);
+        textView_lot.setText(palletLine.getLot());
+
+        TextView textView_expirationDate = rowView.findViewById(R.id.tvExpirationDate);
+        textView_expirationDate.setText(new SimpleDateFormat("dd-MM-yyyy").format(palletLine.getExpirationDate()));
+
+        ImageButton deleteButton = rowView.findViewById(R.id.btnDeletePalletLine);
+        deleteButton.setTag(palletLine);
 
         return rowView;
     }

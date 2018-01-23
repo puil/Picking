@@ -1,32 +1,61 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:padding="10dp" >
+    android:orientation="vertical"
+    android:descendantFocusability="blocksDescendants"
+    android:padding="10dp">
 
-    <TextView
-        android:id="@+id/lblPallet"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:id="@+id/linearLayout2"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="Palet"
-        android:textSize="30sp" />
+        android:layout_marginStart="8dp"
+        app:layout_constraintEnd_toStartOf="@+id/deleteButton"
+        app:layout_constraintStart_toStartOf="parent"
+        tools:layout_editor_absoluteY="18dp">
 
-    <TextView
-        android:id="@+id/tvPalletNumber"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Núm. palet"
-        android:layout_marginLeft="10dp"
-        android:textSize="30sp"
-        android:layout_marginStart="10dp" />
+        <TextView
+            android:id="@+id/lblPallet"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Palet"
+            android:textSize="30sp" />
+
+        <TextView
+            android:id="@+id/tvPalletNumber"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:layout_marginStart="10dp"
+            android:text="Núm. palet"
+            android:textSize="30sp" />
+    </LinearLayout>
 
     <TextView
         android:id="@+id/tvPalletState"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
         android:text="Estado"
-        android:layout_marginLeft="10dp"
-        android:textSize="30sp"
-        android:layout_marginStart="10dp" />
+        android:textSize="15sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/linearLayout2" />
 
-</LinearLayout>
+    <ImageButton
+        android:id="@+id/deleteButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginTop="8dp"
+        android:adjustViewBounds="false"
+        android:onClick="deleteSelectedPallet"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@android:drawable/ic_menu_delete" />
+
+</android.support.constraint.ConstraintLayout>

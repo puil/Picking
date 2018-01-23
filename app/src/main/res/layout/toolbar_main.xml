@@ -13,6 +13,7 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_marginBottom="5dp"
         android:orientation="vertical">
 
         <android.support.constraint.ConstraintLayout
@@ -25,7 +26,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Pedido"
-                android:textColor="@color/white"
+                android:textColor="@color/aluminum"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 
@@ -33,19 +34,19 @@
                 android:id="@+id/tvSaleOrderNumber"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginLeft="8dp"
                 android:text="#Núm. pedido"
-                android:textColor="@color/white"
+                android:textColor="@color/aluminum"
                 app:layout_constraintStart_toEndOf="@+id/lblSaleOrder"
-                app:layout_constraintTop_toTopOf="parent" />
+                app:layout_constraintTop_toTopOf="parent"
+                android:layout_marginLeft="8dp" />
 
             <TextView
                 android:id="@+id/tvSaleOrderDate"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginRight="8dp"
                 android:text="Fecha pedido"
-                android:textColor="@color/white"
+                android:textColor="@color/aluminum"
+                android:layout_marginRight="8dp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 
@@ -53,16 +54,16 @@
 
         <TextView
             android:id="@+id/tvCustomerName"
-            android:text="Single-line text view that scrolls automatically if the text is too long to fit in the widget"
-            android:singleLine="true"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:ellipsize="marquee"
-            android:marqueeRepeatLimit ="marquee_forever"
             android:focusable="true"
             android:focusableInTouchMode="true"
+            android:marqueeRepeatLimit="marquee_forever"
             android:scrollHorizontally="true"
-            android:textColor="@color/white"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
+            android:singleLine="true"
+            android:text="Single-line text view that scrolls automatically if the text is too long to fit in the widget"
+            android:textColor="@color/aluminum" />
 
         <TextView
             android:id="@+id/tvActivityTitle"
@@ -71,7 +72,7 @@
             android:text="Activity title"
             android:textColor="@color/white"
             android:textSize="24sp"
-            android:textStyle="bold" />
+            android:textStyle="bold|italic" />
 
     </LinearLayout>
 </android.support.v7.widget.Toolbar>

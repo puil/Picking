@@ -20,4 +20,5 @@
     <color name="base">#AAAAAA</color>
     <color name="iron">#CCCCCC</color>
     <color name="white">#ffffff</color>
+    <color name="red">#E12929</color>
 </resources>
