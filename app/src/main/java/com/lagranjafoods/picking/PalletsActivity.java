@@ -43,7 +43,7 @@ public class PalletsActivity extends AppCompatActivity implements View.OnClickLi
     PickingHeader pickingHeader;
     int pickingPalletIdToDelete;
 
-    // variable to track event time
+    // variable to track event time (to avoid double click on buttons)
     private long mLastClickTime = 0;
 
     @Override
@@ -204,7 +204,7 @@ public class PalletsActivity extends AppCompatActivity implements View.OnClickLi
 
         showProgressDialog("Cargando...");
 
-        GsonRequest<PickingResponse> jsObjRequest = new GsonRequest<>(Request.Method.GET, url, PickingResponse.class, null, new Response.Listener<PickingResponse>() {
+        GsonRequest<PickingResponse> gsonRequest = new GsonRequest<>(Request.Method.GET, url, PickingResponse.class, null, new Response.Listener<PickingResponse>() {
 
             @Override
             public void onResponse(PickingResponse response) {
@@ -220,15 +220,15 @@ public class PalletsActivity extends AppCompatActivity implements View.OnClickLi
             }
         }, volleyErrorListener);
 
-        AppController.getInstance(this).addToRequestQueue(jsObjRequest);
+        AppController.getInstance(this).addToRequestQueue(gsonRequest);
     }
 
-    public void addPallet() {
+    private void addPallet() {
         String url = getString(R.string.baseUrl) + "addNewPallet/" + pickingHeader.getId();
 
         showProgressDialog("Añadiendo palet...");
 
-        GsonRequest<PickingResponse> jsObjRequest = new GsonRequest<>(Request.Method.POST, url, PickingResponse.class, null, new Response.Listener<PickingResponse>() {
+        GsonRequest<PickingResponse> gsonRequest = new GsonRequest<>(Request.Method.POST, url, PickingResponse.class, null, new Response.Listener<PickingResponse>() {
 
             @Override
             public void onResponse(PickingResponse response) {
@@ -238,11 +238,34 @@ public class PalletsActivity extends AppCompatActivity implements View.OnClickLi
                 else {
                     showToastWithErrorMessageFromResponse(response);
                 }
-                progressDialog.dismiss();
+                hideProgressDialog();
             }
         }, volleyErrorListener);
 
-        AppController.getInstance(this).addToRequestQueue(jsObjRequest);
+        AppController.getInstance(this).addToRequestQueue(gsonRequest);
+    }
+
+    private void confirmPicking() {
+        String url = getString(R.string.baseUrl) + "confirmPicking/" + pickingHeader.getId();
+
+        showProgressDialog("Confirmando picking...");
+
+        GsonRequest<PickingResponse> gsonRequest = new GsonRequest<>(Request.Method.POST, url, PickingResponse.class, null, new Response.Listener<PickingResponse>() {
+
+            @Override
+            public void onResponse(PickingResponse response) {
+                if (response.isSuccess()){
+                    showToast("Picking confirmado");
+                    finish();
+                }
+                else {
+                    showToastWithErrorMessageFromResponse("No se ha podido confirmar el picking por el siguiente motivo:\n\n", response);
+                }
+                hideProgressDialog();
+            }
+        }, volleyErrorListener);
+
+        AppController.getInstance(this).addToRequestQueue(gsonRequest);
     }
 
     public void deleteSelectedPallet(View view){
@@ -283,45 +306,22 @@ public class PalletsActivity extends AppCompatActivity implements View.OnClickLi
 
         showProgressDialog("Eliminando...");
 
-        GsonRequest<PickingResponse> jsObjRequest = new GsonRequest<>(Request.Method.DELETE,
-                url, PickingResponse.class, null, pickingPalletDeletedListener, volleyErrorListener);
-
-        AppController.getInstance(this).addToRequestQueue(jsObjRequest);
-    }
-
-    Response.Listener<PickingResponse> pickingPalletDeletedListener = new Response.Listener<PickingResponse>() {
-        @Override
-        public void onResponse(PickingResponse response) {
-            if (response.isSuccess()){
-                refreshPallets();
-            }
-            else {
-                showToastWithErrorMessageFromResponse("No se ha podido eliminar por el siguiente motivo:\n\n", response);
-            }
-            progressDialog.dismiss();
-        }
-    };
-
-    public void confirmPicking() {
-        String url = getString(R.string.baseUrl) + "confirmPicking/" + pickingHeader.getId();
-
-        showProgressDialog("Confirmando picking...");
-
-        GsonRequest<PickingResponse> jsObjRequest = new GsonRequest<>(Request.Method.POST, url, PickingResponse.class, null, new Response.Listener<PickingResponse>() {
-
+        GsonRequest<PickingResponse> gsonRequest = new GsonRequest<>(Request.Method.DELETE,
+                url, PickingResponse.class, null, new Response.Listener<PickingResponse>() {
             @Override
             public void onResponse(PickingResponse response) {
-                if (response.isSuccess()){
-                    showToast("Picking confirmado");
-                    finish();
+                if (response.isSuccess()) {
+                    refreshPallets();
+                    showToast("Palet eliminado correctamente");
+                } else {
+                    showToastWithErrorMessageFromResponse("No se ha podido eliminar por el siguiente motivo:\n\n", response);
                 }
-                else {
-                    showToastWithErrorMessageFromResponse("No se ha podido confirmar el picking por el siguiente motivo:\n\n", response);
-                }
-                progressDialog.dismiss();
+
+                hideProgressDialog();
             }
         }, volleyErrorListener);
 
-        AppController.getInstance(this).addToRequestQueue(jsObjRequest);
+        AppController.getInstance(this).addToRequestQueue(gsonRequest);
     }
+
 }

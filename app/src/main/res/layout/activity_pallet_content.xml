@@ -65,7 +65,6 @@
                 android:layout_height="match_parent"
                 android:layout_gravity="center"
                 android:layout_weight="1"
-                android:onClick="seePallets"
                 android:text="Ver&#10;palets" />
 
             <Button

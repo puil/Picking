@@ -11,10 +11,12 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:layout_marginLeft="8dp"
+        android:layout_marginRight="8dp"
         android:minWidth="50dp"
         android:text="88"
         android:textAlignment="center"
         android:textSize="30sp"
+        android:gravity="center"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -27,6 +29,7 @@
         android:layout_marginBottom="8dp"
         android:layout_marginEnd="8dp"
         android:layout_marginStart="8dp"
+        android:layout_marginLeft="8dp"
         android:layout_marginTop="8dp"
         android:orientation="vertical"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -36,7 +39,7 @@
 
         <TextView
             android:id="@+id/tvProductDescription"
-            android:layout_width="225dp"
+            android:layout_width="176dp"
             android:layout_height="wrap_content"
             android:ellipsize="marquee"
             android:focusable="true"
@@ -44,7 +47,7 @@
             android:marqueeRepeatLimit="marquee_forever"
             android:scrollHorizontally="true"
             android:singleLine="true"
-            android:text="Product description" />
+            android:text="Single-line text view that scrolls automatically if the text is too long to fit in the widget" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -68,7 +71,7 @@
                     android:id="@+id/tvLot"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginLeft="21dp"
+                    android:layout_marginLeft="22dp"
                     android:layout_weight="1"
                     android:text="xx-yy"
                     android:textColor="@color/aluminum" />

@@ -14,7 +14,7 @@ public enum PickingActionResultEnum {
     PalletIsAlreadyConfirmed(6),
     CantConfirmPalletBecauseItContainsSomeLines(7),
     UserNotFound(8),
-    CantConfirmPalletBecauseItHasNoLines(9),
+    CantConfirmPalletBecauseItHasNoLines(9, "El palet está vacío"),
     RequestIsNull(10),
     SaleOrderLineNotFound(11),
     ProductNotFound(12),
@@ -31,16 +31,22 @@ public enum PickingActionResultEnum {
     PalletLineNotFound(23),
     ThereAreNoProductsWithTheGivenBarcodeNumber(24),
     ProductsFoundWithTheBarcodeNumberAreNotPresentInTheSaleOrder(25),
-    CantConfirmPickingBecauseThereAreUnconfirmedPallets(26),
+    CantConfirmPickingBecauseThereAreUnconfirmedPallets(26, "Hay palets en curso"),
     CantUndoPickingConfirmationBecauseItIsNotConfirmed(27),
-    PalletStateIsNotCorrect(28),
+    PalletStateIsNotCorrect(28, "El estado del palet no es el correcto"),
     PalletBarcodeIsNotCorrect(29);
 
     private int value;
+    private String message;
 
     PickingActionResultEnum(int value)
     {
         this.value = value;
+    }
+
+    PickingActionResultEnum(int value, String message){
+        this.value = value;
+        this.message = message;
     }
 
     public static PickingActionResultEnum findByAbbr(int value)
@@ -63,11 +69,9 @@ public enum PickingActionResultEnum {
 
     @Override
     public String toString() {
-        switch (this){
-            case CantConfirmPickingBecauseThereAreUnconfirmedPallets:
-                return "Hay palets en curso";
-            default:
-                return super.toString();
-        }
+        if (this.message != null)
+            return this.message;
+        else
+            return super.toString();
     }
 }
