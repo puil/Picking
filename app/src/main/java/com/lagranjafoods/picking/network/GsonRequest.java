@@ -17,6 +17,7 @@ import com.lagranjafoods.picking.network.deserializers.PickingActionResultDeseri
 
 import java.io.UnsupportedEncodingException;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 
 public class GsonRequest<T> extends Request<T> {
@@ -37,14 +38,26 @@ public class GsonRequest<T> extends Request<T> {
         super(method, url, errorListener);
 
         this.clazz = clazz;
-        this.headers = headers;
         this.listener = listener;
+        this.headers = initializeHeadersIfNullAndAddToken(headers);
 
         GsonBuilder gsonBuilder = new GsonBuilder();
         gsonBuilder.registerTypeAdapter(PalletStateEnum.class, new PalletStateDeserializer() );
         gsonBuilder.registerTypeAdapter(PickingActionResultEnum.class, new PickingActionResultDeserializer() );
         gsonBuilder.registerTypeAdapter(Date.class, new DateDeserializer());
         gson = gsonBuilder.create();
+    }
+
+    private Map<String, String> initializeHeadersIfNullAndAddToken(Map<String, String> headersFromRequest) {
+        if (headersFromRequest == null)
+            headersFromRequest = new HashMap<>();
+
+        if (!headersFromRequest.containsKey("Token")){
+            String token = AppController.getStaticToken();
+            headersFromRequest.put("Token", token);
+        }
+
+        return headersFromRequest;
     }
 
     @Override

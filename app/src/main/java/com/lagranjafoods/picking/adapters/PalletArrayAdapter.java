@@ -40,7 +40,7 @@ public class PalletArrayAdapter extends ArrayAdapter<PickingPallet> {
         textView_palletNumber.setText(Integer.toString(pickingPallet.getPalletNumber()));
 
         TextView textView_state = rowView.findViewById(R.id.tvPalletState);
-        textView_state.setText("(" + getStateText(pickingPallet.getState()) + ")");
+        textView_state.setText("(" + pickingPallet.getState() + ")");
 
         ImageButton deleteButton = rowView.findViewById(R.id.deleteButton);
         deleteButton.setTag(pickingPallet);
@@ -56,18 +56,5 @@ public class PalletArrayAdapter extends ArrayAdapter<PickingPallet> {
 
     public boolean isEmpty(){
         return this.values.isEmpty();
-    }
-
-    private String getStateText(PalletStateEnum palletStateEnum){
-        switch (palletStateEnum){
-            case Confirmed:
-                return "confirmado";
-            case Palletized:
-                return "paletizado";
-            case Shipped:
-                return "expedido";
-            default:
-                return "en curso";
-        }
     }
 }

@@ -1,0 +1,3 @@
+<resources>
+    <string name="baseUrl">"http://192.168.1.39/LaGranjaServices/api/picking/"</string>
+</resources>

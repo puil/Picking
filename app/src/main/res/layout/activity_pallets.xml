@@ -55,18 +55,19 @@
                 android:layout_height="77dp"
                 android:layout_marginTop="20dp"
                 android:drawableLeft="@android:drawable/ic_input_add"
-                android:onClick="addPallet"
                 android:text="Añadir el primer palet" />
         </LinearLayout>
 
         <LinearLayout
             android:id="@+id/linearLayout"
             android:layout_width="fill_parent"
-            android:layout_height="80dp"
+            android:layout_height="75dp"
             android:layout_alignParentBottom="true"
+            android:background="@color/black"
             android:orientation="horizontal"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.0"
             app:layout_constraintStart_toStartOf="parent">
 
             <Button
@@ -76,7 +77,6 @@
                 android:layout_gravity="center"
                 android:layout_weight="1"
                 android:drawableLeft="@android:drawable/ic_input_add"
-                android:onClick="addPallet"
                 android:text="Añadir&#10;palet"
                 android:textSize="14sp" />
 

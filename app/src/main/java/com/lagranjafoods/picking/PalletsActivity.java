@@ -4,9 +4,11 @@ import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.Button;
@@ -26,26 +28,41 @@ import com.lagranjafoods.picking.network.AppController;
 import com.lagranjafoods.picking.network.GsonRequest;
 
 import java.text.SimpleDateFormat;
-import java.util.HashMap;
-import java.util.Map;
 
-public class PalletsActivity extends AppCompatActivity {
+public class PalletsActivity extends AppCompatActivity implements View.OnClickListener {
 
     TextView textView_saleOrderNumber;
     TextView textView_saleOrderDate;
     TextView textView_customerName;
-    PickingHeader pickingHeader;
+    Button button_addFirstPallet;
+    Button button_addPallet;
+    Button button_confirmPicking;
     ListView listView;
     PalletArrayAdapter palletArrayAdapter;
+    ProgressDialog progressDialog;
+    PickingHeader pickingHeader;
     int pickingPalletIdToDelete;
+
+    // variable to track event time
+    private long mLastClickTime = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_pallets);
 
+        button_addFirstPallet = findViewById(R.id.btnAddFirstPallet);
+        button_addPallet = findViewById(R.id.btnAddPallet);
+        button_confirmPicking = findViewById(R.id.btnConfirmPicking);
+
+        button_addFirstPallet.setOnClickListener(this);
+        button_addPallet.setOnClickListener(this);
+        button_confirmPicking.setOnClickListener(this);
+
         Intent intent = getIntent();
         pickingHeader = (PickingHeader)intent.getSerializableExtra(ExtraConstants.EXTRA_PICKING_HEADER);
+
+        progressDialog = new ProgressDialog(this, R.style.AppTheme_Dark_Dialog);
 
         setupToolBar();
         setupListView();
@@ -78,14 +95,11 @@ public class PalletsActivity extends AppCompatActivity {
         listView = findViewById(R.id.list);
         palletArrayAdapter = new PalletArrayAdapter(this, pickingHeader.getPallets());
         listView.setAdapter(palletArrayAdapter);
-        showOrHideButtons();
+        showOrHideBottomButtons();
 
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-
             @Override
-            public void onItemClick(AdapterView<?> parent, View view,
-                                    int position, long id) {
-
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 // ListView Clicked item index
                 int itemPosition = position;
 
@@ -102,6 +116,29 @@ public class PalletsActivity extends AppCompatActivity {
     }
 
     @Override
+    public void onClick(View view) {
+        // Preventing multiple clicks, using threshold of 1 second
+        if (SystemClock.elapsedRealtime() - mLastClickTime < 1000) {
+            return;
+        }
+        mLastClickTime = SystemClock.elapsedRealtime();
+        pressedOnClick(view);
+    }
+
+    public void pressedOnClick(View view){
+        switch (view.getId()){
+            case R.id.btnAddPallet:
+            case R.id.btnAddFirstPallet:
+                addPallet();
+                break;
+
+            case R.id.btnConfirmPicking:
+                confirmPicking();
+                break;
+        }
+    }
+
+    @Override
     public void onContentChanged() {
         super.onContentChanged();
 
@@ -110,75 +147,88 @@ public class PalletsActivity extends AppCompatActivity {
         list.setEmptyView(empty);
     }
 
-    private void refreshPallets(){
-        String url ="http://192.168.1.39/LaGranjaServices/api/picking/pallets/" + pickingHeader.getId() + "/";
+    private void showOrHideBottomButtons() {
+        Button addPallet = findViewById(R.id.btnAddPallet);
+        Button confirmPicking = findViewById(R.id.btnConfirmPicking);
 
-        Map<String, String> headers = new HashMap<>();
-        String token = AppController.getInstance(getApplicationContext()).getToken();
-        headers.put("Token", token);
+        if (palletArrayAdapter.isEmpty()){
+            addPallet.setVisibility(View.GONE);
+            confirmPicking.setVisibility(View.GONE);
+        }
+        else{
+            addPallet.setVisibility(View.VISIBLE);
+            confirmPicking.setVisibility(View.VISIBLE);
+        }
+    }
 
-        final ProgressDialog progressDialog = new ProgressDialog(this, R.style.AppTheme_Dark_Dialog);
-        progressDialog.setIndeterminate(true);
-        progressDialog.setMessage("Cargando...");
+    private void showProgressDialog(String message){
+        progressDialog.setMessage(message);
         progressDialog.show();
+    }
 
-        GsonRequest<PickingResponse> jsObjRequest = new GsonRequest<>(Request.Method.GET,
-                url, PickingResponse.class, headers, new Response.Listener<PickingResponse>() {
+    private void hideProgressDialog(){
+        progressDialog.dismiss();
+    }
+
+    private void showToastWithErrorMessageFromResponse(PickingResponse response){
+        showToastWithErrorMessageFromResponse("Error: \n\n", response);
+    }
+
+    private void showToastWithErrorMessageFromResponse(String message, PickingResponse response){
+        showToast(message + response.getErrorMessage());
+    }
+
+    private void showToast(String message){
+        Toast.makeText(getApplicationContext(), message, Toast.LENGTH_LONG).show();
+    }
+
+    Response.ErrorListener volleyErrorListener = new Response.ErrorListener() {
+
+        @Override
+        public void onErrorResponse(VolleyError error) {
+            String message = String.format("Error crítico:\n%s", error.getMessage());
+            Log.e("PalletsActivity", message);
+            showMessage(message);
+            hideProgressDialog();
+        }
+    };
+
+    private void showMessage(String message){
+        Intent intent = new Intent(this, DisplayMessageActivity.class);
+        intent.putExtra(ExtraConstants.EXTRA_MESSAGE, message);
+        startActivity(intent);
+    }
+
+    private void refreshPallets(){
+        String url = getString(R.string.baseUrl) + "pallets/" + pickingHeader.getId();
+
+        showProgressDialog("Cargando...");
+
+        GsonRequest<PickingResponse> jsObjRequest = new GsonRequest<>(Request.Method.GET, url, PickingResponse.class, null, new Response.Listener<PickingResponse>() {
 
             @Override
             public void onResponse(PickingResponse response) {
                 if (response.isSuccess()){
                     palletArrayAdapter.refreshValues(response.getPickingPallets());
-                    showOrHideButtons();
+                    showOrHideBottomButtons();
                 }
                 else {
-                    Toast.makeText(getApplicationContext(), "Error: " + response.getErrorMessage(), Toast.LENGTH_LONG).show();
+                    showToastWithErrorMessageFromResponse(response);
                 }
 
-                progressDialog.dismiss();
+                hideProgressDialog();
             }
-        }, new Response.ErrorListener() {
-
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                String message = String.format("That didn't work! Error:\n%s", error.getMessage());
-                Toast.makeText(getApplicationContext(), message, Toast.LENGTH_LONG).show();
-                //showMessage(String.format("That didn't work! Error:\n%s", error.getMessage()));
-                progressDialog.dismiss();
-            }
-        });
+        }, volleyErrorListener);
 
         AppController.getInstance(this).addToRequestQueue(jsObjRequest);
     }
 
-    private void showOrHideButtons() {
-        Button addPallet = findViewById(R.id.btnAddPallet);
-        Button confirmPallet = findViewById(R.id.btnConfirmPallet);
+    public void addPallet() {
+        String url = getString(R.string.baseUrl) + "addNewPallet/" + pickingHeader.getId();
 
-        if (palletArrayAdapter.isEmpty()){
-            addPallet.setVisibility(View.GONE);
-            confirmPallet.setVisibility(View.GONE);
-        }
-        else{
-            addPallet.setVisibility(View.VISIBLE);
-            confirmPallet.setVisibility(View.VISIBLE);
-        }
-    }
+        showProgressDialog("Añadiendo palet...");
 
-    public void addPallet(View view) {
-        String url ="http://192.168.1.39/LaGranjaServices/api/picking/addNewPallet/" + pickingHeader.getId() + "/";
-
-        Map<String, String> headers = new HashMap<>();
-        String token = AppController.getInstance(getApplicationContext()).getToken();
-        headers.put("Token", token);
-
-        final ProgressDialog progressDialog = new ProgressDialog(this, R.style.AppTheme_Dark_Dialog);
-        progressDialog.setIndeterminate(true);
-        progressDialog.setMessage("Cargando...");
-        progressDialog.show();
-
-        GsonRequest<PickingResponse> jsObjRequest = new GsonRequest<>(Request.Method.POST,
-                url, PickingResponse.class, headers, new Response.Listener<PickingResponse>() {
+        GsonRequest<PickingResponse> jsObjRequest = new GsonRequest<>(Request.Method.POST, url, PickingResponse.class, null, new Response.Listener<PickingResponse>() {
 
             @Override
             public void onResponse(PickingResponse response) {
@@ -186,47 +236,37 @@ public class PalletsActivity extends AppCompatActivity {
                     refreshPallets();
                 }
                 else {
-                    Toast.makeText(getApplicationContext(), "Error: " + response.getErrorMessage(), Toast.LENGTH_LONG).show();
+                    showToastWithErrorMessageFromResponse(response);
                 }
                 progressDialog.dismiss();
             }
-        }, new Response.ErrorListener() {
-
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                String message = String.format("That didn't work! Error:\n%s", error.getMessage());
-                Toast.makeText(getApplicationContext(), message, Toast.LENGTH_LONG).show();
-                //showMessage(String.format("That didn't work! Error:\n%s", error.getMessage()));
-                progressDialog.dismiss();
-            }
-        });
+        }, volleyErrorListener);
 
         AppController.getInstance(this).addToRequestQueue(jsObjRequest);
     }
 
     public void deleteSelectedPallet(View view){
+        // Preventing multiple clicks, using threshold of 1 second
+        if (SystemClock.elapsedRealtime() - mLastClickTime < 1000) {
+            return;
+        }
+        mLastClickTime = SystemClock.elapsedRealtime();
+
         PickingPallet pickingPallet = (PickingPallet) view.getTag();
 
         if (pickingPallet.getState().equals(PalletStateEnum.Picking)){
             AskDeletionQuestion(pickingPallet.getId());
         }
         else{
-            Toast.makeText(getApplicationContext(), "No se puede eliminar porque no está en curso", Toast.LENGTH_LONG).show();
+            showToast("No se puede eliminar porque no está en curso");
         }
     }
 
     DialogInterface.OnClickListener dialogClickListener = new DialogInterface.OnClickListener() {
         @Override
         public void onClick(DialogInterface dialog, int which) {
-            switch (which){
-                case DialogInterface.BUTTON_POSITIVE:
-                    performDeletePickingPallet(pickingPalletIdToDelete);
-                    break;
-
-                case DialogInterface.BUTTON_NEGATIVE:
-                    //Do your No progress
-                    break;
-            }
+            if (which == DialogInterface.BUTTON_POSITIVE)
+                performDeletePickingPallet(pickingPalletIdToDelete);
         }
     };
 
@@ -239,40 +279,48 @@ public class PalletsActivity extends AppCompatActivity {
     }
 
     private void performDeletePickingPallet(int pickingPalletId) {
-        String url ="http://192.168.1.39/LaGranjaServices/api/picking/pallets/" + pickingPalletId + "/";
+        String url = getString(R.string.baseUrl) + "pallets/" + pickingPalletId;
 
-        Map<String, String> headers = new HashMap<>();
-        String token = AppController.getInstance(getApplicationContext()).getToken();
-        headers.put("Token", token);
-
-        final ProgressDialog progressDialog = new ProgressDialog(this, R.style.Theme_AppCompat_Light_Dialog);
-        progressDialog.setIndeterminate(true);
-        progressDialog.setMessage("Eliminando...");
-        progressDialog.show();
+        showProgressDialog("Eliminando...");
 
         GsonRequest<PickingResponse> jsObjRequest = new GsonRequest<>(Request.Method.DELETE,
-                url, PickingResponse.class, headers, new Response.Listener<PickingResponse>() {
+                url, PickingResponse.class, null, pickingPalletDeletedListener, volleyErrorListener);
+
+        AppController.getInstance(this).addToRequestQueue(jsObjRequest);
+    }
+
+    Response.Listener<PickingResponse> pickingPalletDeletedListener = new Response.Listener<PickingResponse>() {
+        @Override
+        public void onResponse(PickingResponse response) {
+            if (response.isSuccess()){
+                refreshPallets();
+            }
+            else {
+                showToastWithErrorMessageFromResponse("No se ha podido eliminar por el siguiente motivo:\n\n", response);
+            }
+            progressDialog.dismiss();
+        }
+    };
+
+    public void confirmPicking() {
+        String url = getString(R.string.baseUrl) + "confirmPicking/" + pickingHeader.getId();
+
+        showProgressDialog("Confirmando picking...");
+
+        GsonRequest<PickingResponse> jsObjRequest = new GsonRequest<>(Request.Method.POST, url, PickingResponse.class, null, new Response.Listener<PickingResponse>() {
 
             @Override
             public void onResponse(PickingResponse response) {
                 if (response.isSuccess()){
-                    refreshPallets();
+                    showToast("Picking confirmado");
+                    finish();
                 }
                 else {
-                    Toast.makeText(getApplicationContext(), "No se ha podido eliminar por el siguiente motivo:\n\n" + response.getErrorMessage(), Toast.LENGTH_LONG).show();
+                    showToastWithErrorMessageFromResponse("No se ha podido confirmar el picking por el siguiente motivo:\n\n", response);
                 }
                 progressDialog.dismiss();
             }
-        }, new Response.ErrorListener() {
-
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                String message = String.format("That didn't work! Error:\n%s", error.getMessage());
-                Toast.makeText(getApplicationContext(), message, Toast.LENGTH_LONG).show();
-                //showMessage(String.format("That didn't work! Error:\n%s", error.getMessage()));
-                progressDialog.dismiss();
-            }
-        });
+        }, volleyErrorListener);
 
         AppController.getInstance(this).addToRequestQueue(jsObjRequest);
     }

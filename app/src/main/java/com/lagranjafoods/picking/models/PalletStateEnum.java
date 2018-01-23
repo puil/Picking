@@ -34,4 +34,18 @@ public enum PalletStateEnum {
     {
         return value;
     }
+
+    @Override
+    public String toString(){
+        switch (this){
+            case Confirmed:
+                return "confirmado";
+            case Palletized:
+                return "paletizado";
+            case Shipped:
+                return "expedido";
+            default:
+                return "en curso";
+        }
+    }
 }

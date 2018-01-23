@@ -69,7 +69,7 @@ public class PalletContentActivity extends AppCompatActivity {
 
         // Get access to the custom title view
         TextView mTitle = toolbar.findViewById(R.id.tvActivityTitle);
-        mTitle.setText("Palet " + currentPickingPallet.getPalletNumber());
+        mTitle.setText(getToolbarTitle());
 
         textView_saleOrderNumber = findViewById(R.id.tvSaleOrderNumber);
         textView_saleOrderDate = findViewById(R.id.tvSaleOrderDate);
@@ -78,6 +78,10 @@ public class PalletContentActivity extends AppCompatActivity {
         textView_saleOrderNumber.setText(Integer.toString(pickingHeader.getSaleOrderNumber()));
         textView_saleOrderDate.setText(new SimpleDateFormat("dd-MM-yyyy").format(pickingHeader.getSaleOrderDate()));
         textView_customerName.setText(pickingHeader.getCustomerName());
+    }
+
+    private String getToolbarTitle(){
+        return "Palet " + currentPickingPallet.getPalletNumber() + "   (" + currentPickingPallet.getState() + ")";
     }
 
     private void setupListView(){

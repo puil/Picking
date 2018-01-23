@@ -60,4 +60,14 @@ public enum PickingActionResultEnum {
     {
         return value;
     }
+
+    @Override
+    public String toString() {
+        switch (this){
+            case CantConfirmPickingBecauseThereAreUnconfirmedPallets:
+                return "Hay palets en curso";
+            default:
+                return super.toString();
+        }
+    }
 }

@@ -3,17 +3,14 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="horizontal"
-    android:descendantFocusability="blocksDescendants"
-    android:padding="10dp">
+    android:descendantFocusability="blocksDescendants">
 
     <TextView
         android:id="@+id/tvAmount"
         android:layout_width="33dp"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
+        android:layout_marginStart="8dp"
         android:layout_marginLeft="8dp"
-        android:layout_marginTop="8dp"
         android:minWidth="50dp"
         android:text="88"
         android:textAlignment="center"
@@ -28,17 +25,18 @@
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_marginBottom="8dp"
-        android:layout_marginLeft="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
         android:orientation="vertical"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/btnDeletePalletLine"
+        app:layout_constraintEnd_toStartOf="@+id/linearLayout5"
         app:layout_constraintStart_toEndOf="@+id/tvAmount"
         app:layout_constraintTop_toTopOf="parent">
 
         <TextView
             android:id="@+id/tvProductDescription"
-            android:layout_width="wrap_content"
+            android:layout_width="225dp"
             android:layout_height="wrap_content"
             android:ellipsize="marquee"
             android:focusable="true"
@@ -46,8 +44,7 @@
             android:marqueeRepeatLimit="marquee_forever"
             android:scrollHorizontally="true"
             android:singleLine="true"
-            android:text="Product description"
-            android:textColor="@color/aluminum" />
+            android:text="Product description" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -102,19 +99,30 @@
 
     </LinearLayout>
 
-    <ImageButton
-        android:id="@+id/btnDeletePalletLine"
+    <LinearLayout
+        android:id="@+id/linearLayout5"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
-        android:layout_marginRight="8dp"
-        android:layout_marginLeft="8dp"
-        android:layout_marginTop="8dp"
-        android:adjustViewBounds="false"
-        android:onClick="deleteSelectedPalletLine"
+        android:layout_height="0dp"
+        android:orientation="vertical"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/linearLayout3"
-        app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@android:drawable/ic_menu_delete" />
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageButton
+            android:id="@+id/btnDeletePalletLine"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:paddingLeft="16dp"
+            android:paddingRight="16dp"
+            android:layout_weight="1"
+            android:adjustViewBounds="false"
+            android:background="@android:color/transparent"
+            android:contentDescription="Borrar producto"
+            android:onClick="deleteSelectedPalletLine"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/linearLayout3"
+            app:layout_constraintTop_toTopOf="parent"
+            app:srcCompat="@android:drawable/ic_delete" />
+    </LinearLayout>
 </android.support.constraint.ConstraintLayout>

@@ -10,6 +10,7 @@ public class AppController {
 
     private static AppController mInstance;
     private static Context mCtx;
+    private static String staticToken;
     private RequestQueue mRequestQueue;
     private String token;
 
@@ -46,7 +47,12 @@ public class AppController {
         return token;
     }
 
+    public static String getStaticToken(){
+        return staticToken;
+    }
+
     public void setToken(String tokenValue){
         this.token = tokenValue;
+        staticToken = tokenValue;
     }
 }
