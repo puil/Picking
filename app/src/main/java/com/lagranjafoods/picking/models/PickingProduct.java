@@ -1,17 +1,19 @@
 package com.lagranjafoods.picking.models;
 
+import java.io.Serializable;
+
 /**
  * Created by joang on 19/01/2018.
  */
 
-public class PickingProduct {
+public class PickingProduct implements Serializable{
     private int productId;
     private String productDescription;
     private boolean productIsCommercial;
     private int saleOrderLineId;
-    private int SaleOrderLineNumber;
-    private int SaleOrderLinePickedUnits;
-    private int SaleOrderLineUnits;
+    private int saleOrderLineNumber;
+    private int saleOrderLinePickedUnits;
+    private int saleOrderLineUnits;
 
 
     public int getProductId() {
@@ -47,26 +49,26 @@ public class PickingProduct {
     }
 
     public int getSaleOrderLineNumber() {
-        return SaleOrderLineNumber;
+        return saleOrderLineNumber;
     }
 
     public void setSaleOrderLineNumber(int saleOrderLineNumber) {
-        SaleOrderLineNumber = saleOrderLineNumber;
+        this.saleOrderLineNumber = saleOrderLineNumber;
     }
 
     public int getSaleOrderLinePickedUnits() {
-        return SaleOrderLinePickedUnits;
+        return saleOrderLinePickedUnits;
     }
 
     public void setSaleOrderLinePickedUnits(int saleOrderLinePickedUnits) {
-        SaleOrderLinePickedUnits = saleOrderLinePickedUnits;
+        this.saleOrderLinePickedUnits = saleOrderLinePickedUnits;
     }
 
     public int getSaleOrderLineUnits() {
-        return SaleOrderLineUnits;
+        return saleOrderLineUnits;
     }
 
     public void setSaleOrderLineUnits(int saleOrderLineUnits) {
-        SaleOrderLineUnits = saleOrderLineUnits;
+        this.saleOrderLineUnits = saleOrderLineUnits;
     }
 }

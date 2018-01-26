@@ -17,7 +17,7 @@ public enum PickingActionResultEnum {
     CantConfirmPalletBecauseItHasNoLines(9, "El palet está vacío"),
     RequestIsNull(10),
     SaleOrderLineNotFound(11),
-    ProductNotFound(12),
+    ProductNotFound(12, "El artículo no existe"),
     LotMustBeEmptyBecauseProductIsCommercial(13),
     ExpirationDateMustBeNullBecauseProductIsCommercial(14),
     LotCantBeEmpty(15),
@@ -34,7 +34,8 @@ public enum PickingActionResultEnum {
     CantConfirmPickingBecauseThereAreUnconfirmedPallets(26, "Hay palets en curso"),
     CantUndoPickingConfirmationBecauseItIsNotConfirmed(27),
     PalletStateIsNotCorrect(28, "El estado del palet no es el correcto"),
-    PalletBarcodeIsNotCorrect(29);
+    PalletBarcodeIsNotCorrect(29),
+    ProductFoundWithProductCodeIsNotPresentInTheSaleOrder(30, "El artículo no se encuentra en el pedido o todas sus unidades ya se han añadido al picking");
 
     private int value;
     private String message;

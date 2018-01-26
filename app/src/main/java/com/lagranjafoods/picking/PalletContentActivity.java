@@ -9,6 +9,7 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ListView;
@@ -34,7 +35,7 @@ import java.util.List;
 import java.util.Map;
 
 public class PalletContentActivity extends AppCompatActivity implements View.OnClickListener{
-
+    public static int FINISH_ADDPRODUCTACTIVITY_REQUESTCODE = 100;
     TextView textView_saleOrderNumber;
     TextView textView_saleOrderDate;
     TextView textView_customerName;
@@ -207,7 +208,23 @@ public class PalletContentActivity extends AppCompatActivity implements View.OnC
     }
 
     private void addProduct() {
-        showToast("Pendent de fer");
+        Intent intent = new Intent(this, AddProductActivity.class);
+        intent.putExtra(ExtraConstants.EXTRA_PICKING_HEADER, pickingHeader);
+        intent.putExtra(ExtraConstants.EXTRA_PICKING_PALLET, currentPickingPallet);
+        startActivityForResult(intent, FINISH_ADDPRODUCTACTIVITY_REQUESTCODE);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == FINISH_ADDPRODUCTACTIVITY_REQUESTCODE) {
+            if (resultCode == RESULT_OK) {
+                // Si el resultat és OK, representa que s'ha afegit algun article correctament.
+                // Per tant, refresco el contingut del palet
+                loadPalletLines();
+            }
+        }
     }
 
     public void seePallets(){

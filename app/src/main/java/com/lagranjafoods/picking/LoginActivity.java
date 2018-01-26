@@ -14,6 +14,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
@@ -130,6 +131,8 @@ public class LoginActivity extends AppCompatActivity {
             }
         };
 
+        stringWithHeadersRequest.setRetryPolicy(new DefaultRetryPolicy(10000, DefaultRetryPolicy.DEFAULT_MAX_RETRIES, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
+
         AppController.getInstance(this).addToRequestQueue(stringWithHeadersRequest);
     }
 
@@ -151,6 +154,7 @@ public class LoginActivity extends AppCompatActivity {
         _loginButton.setEnabled(true);
         finish();
         Intent myIntent = new Intent(LoginActivity.this, MainActivity.class);
+
         LoginActivity.this.startActivity(myIntent);
     }
 

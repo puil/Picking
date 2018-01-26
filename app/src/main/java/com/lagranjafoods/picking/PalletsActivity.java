@@ -12,6 +12,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -148,17 +149,8 @@ public class PalletsActivity extends AppCompatActivity implements View.OnClickLi
     }
 
     private void showOrHideBottomButtons() {
-        Button addPallet = findViewById(R.id.btnAddPallet);
-        Button confirmPicking = findViewById(R.id.btnConfirmPicking);
-
-        if (palletArrayAdapter.isEmpty()){
-            addPallet.setVisibility(View.GONE);
-            confirmPicking.setVisibility(View.GONE);
-        }
-        else{
-            addPallet.setVisibility(View.VISIBLE);
-            confirmPicking.setVisibility(View.VISIBLE);
-        }
+        LinearLayout bottomLinearLayout = findViewById(R.id.bottomLinearLayout);
+        bottomLinearLayout.setVisibility(palletArrayAdapter.isEmpty() ? View.GONE : View.VISIBLE);
     }
 
     private void showProgressDialog(String message){

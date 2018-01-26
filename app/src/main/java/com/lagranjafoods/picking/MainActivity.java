@@ -4,9 +4,13 @@ import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import com.android.volley.Request;
 import com.android.volley.Response;
@@ -18,12 +22,10 @@ import com.lagranjafoods.picking.models.PickingResponse;
 import com.lagranjafoods.picking.network.AppController;
 import com.lagranjafoods.picking.network.GsonRequest;
 
-import java.util.HashMap;
-import java.util.Map;
-
 public class MainActivity extends AppCompatActivity {
     EditText editText_saleOrderNumber;
     Button button;
+    ProgressDialog progressDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,40 +35,59 @@ public class MainActivity extends AppCompatActivity {
         editText_saleOrderNumber = findViewById(R.id.editSaleOrderNumber);
         button = findViewById(R.id.find_button);
 
-        editText_saleOrderNumber.setText("28034");
+        progressDialog = new ProgressDialog(this, R.style.AppTheme_Dark_Dialog);
+
+        editText_saleOrderNumber.setText("21366");
+
+        setupToolBar();
     }
 
-    public void getPicking(View view) {
-        String url ="http://192.168.1.39/LaGranjaServices/api/picking/getOrCreate/" + editText_saleOrderNumber.getText() + "/";
+    private void setupToolBar(){
+        Toolbar toolbar = findViewById(R.id.my_toolbar);
+        setSupportActionBar(toolbar);
 
-        Map<String, String> headers = new HashMap<>();
-        String token = AppController.getInstance(getApplicationContext()).getToken();
-        headers.put("Token", token);
+        // Remove default title text
+        getSupportActionBar().setDisplayShowTitleEnabled(false);
 
-        final ProgressDialog progressDialog = new ProgressDialog(MainActivity.this, R.style.AppTheme_Dark_Dialog);
-        progressDialog.setIndeterminate(true);
-        progressDialog.setMessage("cargando...");
+        // Get access to the custom title view
+        TextView mTitle = toolbar.findViewById(R.id.tvActivityTitle);
+        mTitle.setText("Picking");
+
+        TextView textView_userName = toolbar.findViewById(R.id.tvUserName);
+        textView_userName.setText("");
+    }
+
+    private void showProgressDialog(String message){
+        progressDialog.setMessage(message);
         progressDialog.show();
-
-        GsonRequest<PickingResponse> jsObjRequest = new GsonRequest<>(Request.Method.GET,
-                url, PickingResponse.class, headers, new Response.Listener<PickingResponse>() {
-
-            @Override
-            public void onResponse(PickingResponse response) {
-                checkResponseAndStartPalletContentActivity(response);
-                progressDialog.dismiss();
-            }
-        }, new Response.ErrorListener() {
-
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                showMessage(String.format("That didn't work! Error:\n%s", error.getMessage()));
-                progressDialog.dismiss();
-            }
-        });
-
-        AppController.getInstance(this).addToRequestQueue(jsObjRequest);
     }
+
+    private void hideProgressDialog(){
+        progressDialog.dismiss();
+    }
+
+    private void showToastWithErrorMessageFromResponse(PickingResponse response){
+        showToastWithErrorMessageFromResponse("Error: \n\n", response);
+    }
+
+    private void showToastWithErrorMessageFromResponse(String message, PickingResponse response){
+        showToast(message + response.getErrorMessage());
+    }
+
+    private void showToast(String message){
+        Toast.makeText(getApplicationContext(), message, Toast.LENGTH_LONG).show();
+    }
+
+    Response.ErrorListener volleyErrorListener = new Response.ErrorListener() {
+
+        @Override
+        public void onErrorResponse(VolleyError error) {
+            String message = String.format("Error crítico:\n%s", error.getMessage());
+            Log.e("PalletsActivity", message);
+            showMessage(message);
+            hideProgressDialog();
+        }
+    };
 
     private void showMessage(String message){
         Intent intent = new Intent(this, DisplayMessageActivity.class);
@@ -74,24 +95,41 @@ public class MainActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
-    private void checkResponseAndStartPalletContentActivity(PickingResponse pickingResponse){
-        if (pickingResponse.isSuccess()){
-            PickingHeader pickingHeader = pickingResponse.getPickingHeader();
+    public void getPicking(View view) {
+        String url = getString(R.string.baseUrl) + "getOrCreate/" + editText_saleOrderNumber.getText();
 
-            if (pickingHeader.getPallets().isEmpty()){
-                Intent intent = new Intent(this, PalletsActivity.class);
-                intent.putExtra(ExtraConstants.EXTRA_PICKING_HEADER, pickingHeader);
-                startActivity(intent);
+        showProgressDialog("Cargando...");
+
+        GsonRequest<PickingResponse> gsonRequest = new GsonRequest<>(Request.Method.GET,
+                url, PickingResponse.class, null, new Response.Listener<PickingResponse>() {
+            @Override
+            public void onResponse(PickingResponse response) {
+                if (response.isSuccess()) {
+                    startActivityDependingOnPalletsCountInPickingHeader(response);
+                } else {
+                    showToastWithErrorMessageFromResponse("Error al cargar el picking:\n\n", response);
+                }
+
+                hideProgressDialog();
             }
-            else{
-                Intent intent = new Intent(this, PalletContentActivity.class);
-                intent.putExtra(ExtraConstants.EXTRA_PICKING_HEADER, pickingHeader);
-                intent.putExtra(ExtraConstants.EXTRA_PICKING_PALLET, getFirstActivePallet(pickingHeader));
-                startActivity(intent);
-            }
+        }, volleyErrorListener);
+
+        AppController.getInstance(this).addToRequestQueue(gsonRequest);
+    }
+
+    private void startActivityDependingOnPalletsCountInPickingHeader(PickingResponse pickingResponse){
+        PickingHeader pickingHeader = pickingResponse.getPickingHeader();
+
+        if (pickingHeader.getPallets().isEmpty()){
+            Intent intent = new Intent(this, PalletsActivity.class);
+            intent.putExtra(ExtraConstants.EXTRA_PICKING_HEADER, pickingHeader);
+            startActivity(intent);
         }
-        else {
-            showMessage(pickingResponse.getActionResultMessage());
+        else{
+            Intent intent = new Intent(this, PalletContentActivity.class);
+            intent.putExtra(ExtraConstants.EXTRA_PICKING_HEADER, pickingHeader);
+            intent.putExtra(ExtraConstants.EXTRA_PICKING_PALLET, getFirstActivePallet(pickingHeader));
+            startActivity(intent);
         }
     }
 
