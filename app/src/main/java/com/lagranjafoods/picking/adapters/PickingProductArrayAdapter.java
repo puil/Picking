@@ -37,7 +37,7 @@ public class PickingProductArrayAdapter extends ArrayAdapter<PickingProduct> {
         textView_productDescription.setText(String.format("%d - %s", pickingProduct.getProductId(), pickingProduct.getProductDescription()));
 
         TextView textView_saleOrderLineNumber = rowView.findViewById(R.id.tvSaleOrderLineNumber);
-        textView_saleOrderLineNumber.setText(String.format("Línea %d", pickingProduct.getSaleOrderLineNumber()));
+        textView_saleOrderLineNumber.setText(String.format("%d", pickingProduct.getSaleOrderLineNumber()));
 
         TextView textView_amountInSaleOrderLine = rowView.findViewById(R.id.tvAmountInSaleOrderLine);
         textView_amountInSaleOrderLine.setText(String.format("%d de %d cajas", pickingProduct.getSaleOrderLinePickedUnits(), pickingProduct.getSaleOrderLineUnits()));

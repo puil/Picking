@@ -1,4 +1,7 @@
 <resources>
     <string name="baseUrl">"http://192.168.1.39/LaGranjaServices/api/picking/"</string>
     <string name="stockEndpoint">"http://192.168.1.39/LaGranjaServices/api/stock/"</string>
+    <string name="loginEndpoint">"http://192.168.1.39/LaGranjaServices/login/"</string>
+    <string name="usersEndpoint">"http://192.168.1.39/LaGranjaServices/api/users/"</string>
+    <string name="prova">@string/stockEndpoint</string>
 </resources>

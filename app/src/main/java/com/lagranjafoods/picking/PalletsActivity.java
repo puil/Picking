@@ -1,25 +1,20 @@
 package com.lagranjafoods.picking;
 
-import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.support.v7.app.AlertDialog;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.android.volley.Request;
 import com.android.volley.Response;
-import com.android.volley.VolleyError;
 import com.lagranjafoods.picking.adapters.PalletArrayAdapter;
 import com.lagranjafoods.picking.models.PalletStateEnum;
 import com.lagranjafoods.picking.models.PickingHeader;
@@ -30,7 +25,7 @@ import com.lagranjafoods.picking.network.GsonRequest;
 
 import java.text.SimpleDateFormat;
 
-public class PalletsActivity extends AppCompatActivity implements View.OnClickListener {
+public class PalletsActivity extends BaseActivity {
 
     TextView textView_saleOrderNumber;
     TextView textView_saleOrderDate;
@@ -38,14 +33,11 @@ public class PalletsActivity extends AppCompatActivity implements View.OnClickLi
     Button button_addFirstPallet;
     Button button_addPallet;
     Button button_confirmPicking;
+    android.support.design.widget.FloatingActionButton button_floatingAddPallet;
     ListView listView;
     PalletArrayAdapter palletArrayAdapter;
-    ProgressDialog progressDialog;
     PickingHeader pickingHeader;
     int pickingPalletIdToDelete;
-
-    // variable to track event time (to avoid double click on buttons)
-    private long mLastClickTime = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,18 +47,20 @@ public class PalletsActivity extends AppCompatActivity implements View.OnClickLi
         button_addFirstPallet = findViewById(R.id.btnAddFirstPallet);
         button_addPallet = findViewById(R.id.btnAddPallet);
         button_confirmPicking = findViewById(R.id.btnConfirmPicking);
+        button_floatingAddPallet = findViewById(R.id.fbtnAddPallet);
 
         button_addFirstPallet.setOnClickListener(this);
         button_addPallet.setOnClickListener(this);
         button_confirmPicking.setOnClickListener(this);
+        button_floatingAddPallet.setOnClickListener(this);
 
         Intent intent = getIntent();
         pickingHeader = (PickingHeader)intent.getSerializableExtra(ExtraConstants.EXTRA_PICKING_HEADER);
 
-        progressDialog = new ProgressDialog(this, R.style.AppTheme_Dark_Dialog);
-
         setupToolBar();
         setupListView();
+
+        loadPallets();
     }
 
     private void setupToolBar(){
@@ -117,19 +111,11 @@ public class PalletsActivity extends AppCompatActivity implements View.OnClickLi
     }
 
     @Override
-    public void onClick(View view) {
-        // Preventing multiple clicks, using threshold of 1 second
-        if (SystemClock.elapsedRealtime() - mLastClickTime < 1000) {
-            return;
-        }
-        mLastClickTime = SystemClock.elapsedRealtime();
-        pressedOnClick(view);
-    }
-
-    public void pressedOnClick(View view){
+    protected void pressedOnClick(View view){
         switch (view.getId()){
             case R.id.btnAddPallet:
             case R.id.btnAddFirstPallet:
+            case R.id.fbtnAddPallet:
                 addPallet();
                 break;
 
@@ -151,52 +137,22 @@ public class PalletsActivity extends AppCompatActivity implements View.OnClickLi
     private void showOrHideBottomButtons() {
         LinearLayout bottomLinearLayout = findViewById(R.id.bottomLinearLayout);
         bottomLinearLayout.setVisibility(palletArrayAdapter.isEmpty() ? View.GONE : View.VISIBLE);
+
+        button_floatingAddPallet.setVisibility(palletArrayAdapter.isEmpty() ? View.GONE : View.VISIBLE);
     }
 
-    private void showProgressDialog(String message){
-        progressDialog.setMessage(message);
-        progressDialog.show();
-    }
+    /*
+     * ----------------------------------------------------------------------------
+     * Load pallets
+     * ----------------------------------------------------------------------------
+     */
 
-    private void hideProgressDialog(){
-        progressDialog.dismiss();
-    }
-
-    private void showToastWithErrorMessageFromResponse(PickingResponse response){
-        showToastWithErrorMessageFromResponse("Error: \n\n", response);
-    }
-
-    private void showToastWithErrorMessageFromResponse(String message, PickingResponse response){
-        showToast(message + response.getErrorMessage());
-    }
-
-    private void showToast(String message){
-        Toast.makeText(getApplicationContext(), message, Toast.LENGTH_LONG).show();
-    }
-
-    Response.ErrorListener volleyErrorListener = new Response.ErrorListener() {
-
-        @Override
-        public void onErrorResponse(VolleyError error) {
-            String message = String.format("Error crítico:\n%s", error.getMessage());
-            Log.e("PalletsActivity", message);
-            showMessage(message);
-            hideProgressDialog();
-        }
-    };
-
-    private void showMessage(String message){
-        Intent intent = new Intent(this, DisplayMessageActivity.class);
-        intent.putExtra(ExtraConstants.EXTRA_MESSAGE, message);
-        startActivity(intent);
-    }
-
-    private void refreshPallets(){
+    private void loadPallets(){
         String url = getString(R.string.baseUrl) + "pallets/" + pickingHeader.getId();
 
         showProgressDialog("Cargando...");
 
-        GsonRequest<PickingResponse> gsonRequest = new GsonRequest<>(Request.Method.GET, url, PickingResponse.class, null, new Response.Listener<PickingResponse>() {
+        GsonRequest<PickingResponse> gsonRequest = new GsonRequest<>(Request.Method.GET, url, PickingResponse.class, null, null, new Response.Listener<PickingResponse>() {
 
             @Override
             public void onResponse(PickingResponse response) {
@@ -215,17 +171,23 @@ public class PalletsActivity extends AppCompatActivity implements View.OnClickLi
         AppController.getInstance(this).addToRequestQueue(gsonRequest);
     }
 
+    /*
+     * ----------------------------------------------------------------------------
+     * Add pallet
+     * ----------------------------------------------------------------------------
+     */
+
     private void addPallet() {
         String url = getString(R.string.baseUrl) + "addNewPallet/" + pickingHeader.getId();
 
         showProgressDialog("Añadiendo palet...");
 
-        GsonRequest<PickingResponse> gsonRequest = new GsonRequest<>(Request.Method.POST, url, PickingResponse.class, null, new Response.Listener<PickingResponse>() {
+        GsonRequest<PickingResponse> gsonRequest = new GsonRequest<>(Request.Method.POST, url, PickingResponse.class, null, null, new Response.Listener<PickingResponse>() {
 
             @Override
             public void onResponse(PickingResponse response) {
                 if (response.isSuccess()){
-                    refreshPallets();
+                    loadPallets();
                 }
                 else {
                     showToastWithErrorMessageFromResponse(response);
@@ -237,12 +199,18 @@ public class PalletsActivity extends AppCompatActivity implements View.OnClickLi
         AppController.getInstance(this).addToRequestQueue(gsonRequest);
     }
 
+    /*
+     * ----------------------------------------------------------------------------
+     * Confirm picking
+     * ----------------------------------------------------------------------------
+     */
+
     private void confirmPicking() {
         String url = getString(R.string.baseUrl) + "confirmPicking/" + pickingHeader.getId();
 
         showProgressDialog("Confirmando picking...");
 
-        GsonRequest<PickingResponse> gsonRequest = new GsonRequest<>(Request.Method.POST, url, PickingResponse.class, null, new Response.Listener<PickingResponse>() {
+        GsonRequest<PickingResponse> gsonRequest = new GsonRequest<>(Request.Method.POST, url, PickingResponse.class, null, null, new Response.Listener<PickingResponse>() {
 
             @Override
             public void onResponse(PickingResponse response) {
@@ -259,6 +227,12 @@ public class PalletsActivity extends AppCompatActivity implements View.OnClickLi
 
         AppController.getInstance(this).addToRequestQueue(gsonRequest);
     }
+
+    /*
+     * ----------------------------------------------------------------------------
+     * Delete pallet
+     * ----------------------------------------------------------------------------
+     */
 
     public void deleteSelectedPallet(View view){
         // Preventing multiple clicks, using threshold of 1 second
@@ -299,11 +273,11 @@ public class PalletsActivity extends AppCompatActivity implements View.OnClickLi
         showProgressDialog("Eliminando...");
 
         GsonRequest<PickingResponse> gsonRequest = new GsonRequest<>(Request.Method.DELETE,
-                url, PickingResponse.class, null, new Response.Listener<PickingResponse>() {
+                url, PickingResponse.class, null, null, new Response.Listener<PickingResponse>() {
             @Override
             public void onResponse(PickingResponse response) {
                 if (response.isSuccess()) {
-                    refreshPallets();
+                    loadPallets();
                     showToast("Palet eliminado correctamente");
                 } else {
                     showToastWithErrorMessageFromResponse("No se ha podido eliminar por el siguiente motivo:\n\n", response);
@@ -315,5 +289,4 @@ public class PalletsActivity extends AppCompatActivity implements View.OnClickLi
 
         AppController.getInstance(this).addToRequestQueue(gsonRequest);
     }
-
 }

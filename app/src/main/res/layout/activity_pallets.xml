@@ -23,10 +23,21 @@
             android:id="@+id/list"
             android:layout_width="0dp"
             android:layout_height="0dp"
+            android:clipToPadding="false"
+            android:paddingBottom="85dp"
             app:layout_constraintBottom_toTopOf="@+id/bottomLinearLayout"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
+
+        <android.support.design.widget.FloatingActionButton
+            android:id="@+id/fbtnAddPallet"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@android:drawable/ic_input_add"
+            android:tint="@color/black"
+            app:layout_constraintBottom_toTopOf="@+id/bottomLinearLayout"
+            app:layout_constraintEnd_toEndOf="parent" />
 
         <LinearLayout
             android:id="@+id/emptyView"
@@ -78,6 +89,7 @@
                 android:layout_weight="1"
                 android:drawableLeft="@android:drawable/ic_input_add"
                 android:text="Añadir&#10;palet"
+                android:visibility="gone"
                 android:textSize="14sp" />
 
             <Button
@@ -86,7 +98,7 @@
                 android:layout_height="match_parent"
                 android:layout_gravity="center"
                 android:layout_weight="1"
-                android:drawableLeft="?android:attr/actionModeCloseDrawable"
+                android:drawableLeft="@drawable/finished_work_32x32"
                 android:text="Confirmar&#10;picking"
                 android:textSize="14sp" />
         </LinearLayout>

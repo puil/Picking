@@ -40,7 +40,7 @@ public class PalletLineArrayAdapter extends ArrayAdapter<PickingPalletLine> {
         textView_amount.setText(Integer.toString(intValueOfAmount));
 
         TextView textView_productDescription = rowView.findViewById(R.id.tvProductDescription);
-        textView_productDescription.setText(palletLine.getProductDescription());
+        textView_productDescription.setText(String.format("%d - %s", palletLine.getProductId(), palletLine.getProductDescription()));
 
         TextView textView_lot = rowView.findViewById(R.id.tvLot);
         textView_lot.setText(palletLine.getLot());

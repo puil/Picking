@@ -1,12 +1,11 @@
 package com.lagranjafoods.picking.network;
 
-import android.net.Uri;
-
 import com.android.volley.AuthFailureError;
 import com.android.volley.NetworkResponse;
 import com.android.volley.ParseError;
 import com.android.volley.Request;
 import com.android.volley.Response;
+import com.android.volley.VolleyLog;
 import com.android.volley.toolbox.HttpHeaderParser;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -29,6 +28,7 @@ public class GsonRequest<T> extends Request<T> {
     private final Map<String, String> headers;
     private final Response.Listener<T> listener;
     private final Type classType;
+    private String mRequestBody = null;
 
     /**
      * Make a GET request and return a parsed object from JSON.
@@ -38,7 +38,7 @@ public class GsonRequest<T> extends Request<T> {
      * @param headers Map of request headers
      */
 
-    public GsonRequest(int method, String url, Class<T> clazz, Map<String, String> headers,
+    public GsonRequest(int method, String url, Class<T> clazz, Map<String, String> headers, String body,
                        Response.Listener<T> listener, Response.ErrorListener errorListener) {
         super(method, url, errorListener);
 
@@ -46,6 +46,7 @@ public class GsonRequest<T> extends Request<T> {
         this.clazz = clazz;
         this.listener = listener;
         this.headers = initializeHeadersIfNullAndAddToken(headers);
+        this.mRequestBody = body;
 
         GsonBuilder gsonBuilder = new GsonBuilder();
         gsonBuilder.registerTypeAdapter(PalletStateEnum.class, new PalletStateDeserializer() );
@@ -55,7 +56,7 @@ public class GsonRequest<T> extends Request<T> {
     }
 
 
-    public GsonRequest(int method, String url, Type classType, Map<String, String> headers,
+    public GsonRequest(int method, String url, Type classType, Map<String, String> headers, String body,
                        Response.Listener<T> listener, Response.ErrorListener errorListener) {
         super(method, url, errorListener);
 
@@ -63,6 +64,7 @@ public class GsonRequest<T> extends Request<T> {
         this.classType = classType;
         this.listener = listener;
         this.headers = initializeHeadersIfNullAndAddToken(headers);
+        this.mRequestBody = body;
 
         GsonBuilder gsonBuilder = new GsonBuilder();
         gsonBuilder.registerTypeAdapter(PalletStateEnum.class, new PalletStateDeserializer() );
@@ -91,6 +93,21 @@ public class GsonRequest<T> extends Request<T> {
     @Override
     protected void deliverResponse(T response) {
         listener.onResponse(response);
+    }
+
+    @Override
+    public String getBodyContentType() {
+        return "application/json; charset=utf-8";
+    }
+
+    @Override
+    public byte[] getBody() throws AuthFailureError {
+        try {
+            return mRequestBody == null ? null : mRequestBody.getBytes("utf-8");
+        } catch (UnsupportedEncodingException uee) {
+            VolleyLog.wtf("Unsupported Encoding while trying to get the bytes of %s using %s", mRequestBody, "utf-8");
+            return null;
+        }
     }
 
     @Override

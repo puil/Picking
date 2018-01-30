@@ -23,10 +23,21 @@
             android:id="@+id/list"
             android:layout_width="0dp"
             android:layout_height="0dp"
+            android:clipToPadding="false"
+            android:paddingBottom="85dp"
             app:layout_constraintBottom_toTopOf="@+id/bottomLinearLayout"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
+
+        <android.support.design.widget.FloatingActionButton
+            android:id="@+id/fbtnAddProduct"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@android:drawable/ic_input_add"
+            android:tint="@color/black"
+            app:layout_constraintBottom_toTopOf="@+id/bottomLinearLayout"
+            app:layout_constraintEnd_toEndOf="parent" />
 
         <TextView
             android:id="@+id/empty"
@@ -52,19 +63,12 @@
             app:layout_constraintStart_toStartOf="parent">
 
             <Button
-                android:id="@+id/btnAddProduct"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_gravity="center"
-                android:layout_weight="1"
-                android:text="Añadir&#10;producto" />
-
-            <Button
                 android:id="@+id/btnSeePallets"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_gravity="center"
                 android:layout_weight="1"
+                android:drawableLeft="@drawable/palet04"
                 android:text="Ver&#10;palets" />
 
             <Button
@@ -73,7 +77,17 @@
                 android:layout_height="match_parent"
                 android:layout_gravity="center"
                 android:layout_weight="1"
+                android:drawableLeft="@drawable/finished_work_32x32"
                 android:text="Confirmar&#10;palet" />
+
+            <Button
+                android:id="@+id/btnUndoPalletConfirmation"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_gravity="center"
+                android:layout_weight="1"
+                android:drawableLeft="@drawable/undo_32x32"
+                android:text="Anular&#10;confirm.&#10;palet"/>
         </LinearLayout>
     </android.support.constraint.ConstraintLayout>
 </LinearLayout>

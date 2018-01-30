@@ -1,30 +1,22 @@
 package com.lagranjafoods.picking;
 
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
-import android.app.ProgressDialog;
-import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.SystemClock;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
+import android.view.KeyEvent;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.inputmethod.InputMethodManager;
+import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TableLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.android.volley.Request;
 import com.android.volley.Response;
-import com.android.volley.VolleyError;
 import com.google.gson.reflect.TypeToken;
 import com.lagranjafoods.picking.helpers.StringHelper;
 import com.lagranjafoods.picking.models.PickingHeader;
@@ -36,14 +28,15 @@ import com.lagranjafoods.picking.models.Warehouses;
 import com.lagranjafoods.picking.network.AppController;
 import com.lagranjafoods.picking.network.GsonRequest;
 
-import org.w3c.dom.Text;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.lang.reflect.Type;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
-public class AddProductActivity extends AppCompatActivity implements View.OnClickListener {
+public class AddProductActivity extends BaseActivity {
     public static int SELECT_PICKING_PRODUCT_REQUESTCODE = 101;
     public static int SELECT_PRODUCT_STOCK_REQUESTCODE = 102;
 
@@ -71,15 +64,10 @@ public class AddProductActivity extends AppCompatActivity implements View.OnClic
     View readBarcodeView;
     View allDataView;
 
-    ProgressDialog progressDialog;
-
     PickingHeader currentPickingHeader;
     PickingPallet currentPickingPallet;
     PickingProduct currentPickingProduct;
     ProductStock currentProductStock;
-
-    // variable to track event time (to avoid double click on buttons)
-    private long mLastClickTime = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -99,7 +87,10 @@ public class AddProductActivity extends AppCompatActivity implements View.OnClic
 
         editText_productCode = findViewById(R.id.editProductCode);
         editText_amount = findViewById(R.id.editTextAmountToAdd);
+        editText_productBarcode = findViewById(R.id.editBarcodeNumber);
 
+        editText_productCode.setOnEditorActionListener(editorActionListener);
+        editText_amount.setOnEditorActionListener(editorActionListener);
         editText_amount.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
@@ -116,6 +107,29 @@ public class AddProductActivity extends AppCompatActivity implements View.OnClic
                 checkAndEnableConfirmButton();
             }
         });
+        editText_productBarcode.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+                if (StringHelper.isNullOrEmpty(editText_productBarcode.getText().toString())){
+                    return;
+                }
+
+                searchProductByBarcodeNumber(editText_productBarcode.getText().toString());
+                editText_productBarcode.setText("");
+            }
+        });
+
+        editText_productBarcode.requestFocus();
 
         button_addProductByCode = findViewById(R.id.btnAddProductByCode);
         button_clearSelectedProduct = findViewById(R.id.btnClearSelectedProduct);
@@ -123,10 +137,12 @@ public class AddProductActivity extends AppCompatActivity implements View.OnClic
         button_confirm = findViewById(R.id.btnConfirm);
 
         readBarcodeView = findViewById(R.id.readBarcodeView);
-        allDataView = findViewById(R.id.allDataView);
+        allDataView = findViewById(R.id.allDataScrollView);
 
         readBarcodeView.setVisibility(View.VISIBLE);
         allDataView.setVisibility(View.GONE);
+
+        hideKeyboard();
 
         button_addProductByCode.setOnClickListener(this);
         button_clearSelectedProduct.setOnClickListener(this);
@@ -137,8 +153,7 @@ public class AddProductActivity extends AppCompatActivity implements View.OnClic
 
         Intent intent = getIntent();
         currentPickingHeader = (PickingHeader)intent.getSerializableExtra(ExtraConstants.EXTRA_PICKING_HEADER);
-
-        progressDialog = new ProgressDialog(this, R.style.AppTheme_Dark_Dialog);
+        currentPickingPallet = (PickingPallet)intent.getSerializableExtra(ExtraConstants.EXTRA_PICKING_PALLET);
 
         setupToolBar();
     }
@@ -157,16 +172,6 @@ public class AddProductActivity extends AppCompatActivity implements View.OnClic
             default:
                 return super.onOptionsItemSelected(item);
         }
-    }
-
-    @Override
-    public void onClick(View view) {
-        // Preventing multiple clicks, using threshold of 1 second
-        if (SystemClock.elapsedRealtime() - mLastClickTime < 1000) {
-            return;
-        }
-        mLastClickTime = SystemClock.elapsedRealtime();
-        pressedOnClick(view);
     }
 
     @Override
@@ -233,103 +238,42 @@ public class AddProductActivity extends AppCompatActivity implements View.OnClic
         }
     }
 
-    /*
-     * ----------------------------------------------------------------------------
-     * Auxiliary methods (maybe relocate them in base class)
-     * ----------------------------------------------------------------------------
-     */
-
-    private void showProgressDialog(String message){
-        progressDialog.setMessage(message);
-        progressDialog.show();
-    }
-
-    private void hideProgressDialog(){
-        progressDialog.dismiss();
-    }
-
-    private void showToastWithErrorMessageFromResponse(PickingResponse response){
-        showToastWithErrorMessageFromResponse("Error: \n\n", response);
-    }
-
-    private void showToastWithErrorMessageFromResponse(String message, PickingResponse response){
-        showToast(message + response.getErrorMessage());
-    }
-
-    private void showToast(String message){
-        Toast.makeText(getApplicationContext(), message, Toast.LENGTH_LONG).show();
-    }
-
-    Response.ErrorListener volleyErrorListener = new Response.ErrorListener() {
-
+    EditText.OnEditorActionListener editorActionListener = new EditText.OnEditorActionListener() {
         @Override
-        public void onErrorResponse(VolleyError error) {
-            String message = String.format("Error crítico:\n%s", error.getMessage());
-            Log.e("AddProductActivity", message);
-            showMessage(message);
-            hideProgressDialog();
+        public boolean onEditorAction(TextView textView, int actionId, KeyEvent keyEvent) {
+            if (actionId == EditorInfo.IME_ACTION_DONE) {
+                switch (textView.getId()){
+                    case R.id.editProductCode:
+                        searchProductByCode();
+                        return true;
+
+                    case R.id.editTextAmountToAdd:
+                        confirm();
+                        return true;
+                }
+            }
+            return false;
         }
     };
-
-    private void showMessage(String message){
-        Intent intent = new Intent(this, DisplayMessageActivity.class);
-        intent.putExtra(ExtraConstants.EXTRA_MESSAGE, message);
-        startActivity(intent);
-    }
-
-    private void hideKeyboard(){
-        InputMethodManager inputManager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-        inputManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
-    }
-
-    private void crossfadeViews(final View viewFrom, final View viewTo) {
-
-        int mShortAnimationDuration = getResources().getInteger(android.R.integer.config_shortAnimTime);
-        // Set the content view to 0% opacity but visible, so that it is visible
-        // (but fully transparent) during the animation.
-        viewTo.setAlpha(0f);
-        viewTo.setVisibility(View.VISIBLE);
-
-        // Animate the content view to 100% opacity, and clear any animation
-        // listener set on the view.
-        viewTo.animate()
-                .alpha(1f)
-                .setDuration(mShortAnimationDuration)
-                .setListener(null);
-
-        // Animate the loading view to 0% opacity. After the animation ends,
-        // set its visibility to GONE as an optimization step (it won't
-        // participate in layout passes, etc.)
-        viewFrom.animate()
-                .alpha(0f)
-                .setDuration(mShortAnimationDuration)
-                .setListener(new AnimatorListenerAdapter() {
-                    @Override
-                    public void onAnimationEnd(Animator animation) {
-                        viewFrom.setVisibility(View.GONE);
-                    }
-                });
-    }
 
     /*
      * ----------------------------------------------------------------------------
      * Product
      * ----------------------------------------------------------------------------
      */
-
-    private void searchProductByCode() {
-        if (StringHelper.isNullOrEmpty(editText_productCode.getText().toString())){
-            showToast("Informa el código de artículo");
+    private void searchProductByBarcodeNumber(String barcodeNumber) {
+        if (StringHelper.isNullOrEmpty(barcodeNumber)){
+            showToast("No hay código de barras leído...");
             return;
         }
 
         String url = getString(R.string.baseUrl)
-                + "products/withCode?pickingHeaderId=" + currentPickingHeader.getId()
-                + "&productId=" + editText_productCode.getText();
+                + "products/withBarcode?pickingHeaderId=" + currentPickingHeader.getId()
+                + "&barcodeNumber=" + barcodeNumber;
 
         showProgressDialog("Buscando artículo...");
 
-        GsonRequest<PickingResponse> gsonRequest = new GsonRequest<>(Request.Method.GET, url, PickingResponse.class, null, new Response.Listener<PickingResponse>() {
+        GsonRequest<PickingResponse> gsonRequest = new GsonRequest<>(Request.Method.GET, url, PickingResponse.class, null, null, new Response.Listener<PickingResponse>() {
 
             @Override
             public void onResponse(PickingResponse response) {
@@ -349,12 +293,44 @@ public class AddProductActivity extends AppCompatActivity implements View.OnClic
         AppController.getInstance(this).addToRequestQueue(gsonRequest);
     }
 
+    private void searchProductByCode() {
+        if (StringHelper.isNullOrEmpty(editText_productCode.getText().toString())){
+            showToast("Informa el código de artículo");
+            return;
+        }
+
+        String url = getString(R.string.baseUrl)
+                + "products/withCode?pickingHeaderId=" + currentPickingHeader.getId()
+                + "&productId=" + editText_productCode.getText();
+
+        showProgressDialog("Buscando artículo...");
+
+        GsonRequest<PickingResponse> gsonRequest = new GsonRequest<>(Request.Method.GET, url, PickingResponse.class, null, null, new Response.Listener<PickingResponse>() {
+
+            @Override
+            public void onResponse(PickingResponse response) {
+                if (response.isSuccess()){
+                    hideKeyboard();
+                    editText_productCode.setText("");
+                    handleReceivedPickingProducts(response.getPickingProducts());
+                }
+                else {
+                    showToastWithErrorMessageFromResponse("", response);
+                }
+
+                hideProgressDialog();
+            }
+        }, volleyErrorListener);
+
+        AppController.getInstance(this).addToRequestQueue(gsonRequest);
+    }
+
     private void setCurrentProduct(PickingProduct pickingProduct){
         currentPickingProduct = pickingProduct;
 
-        textView_productDescription.setText(currentPickingProduct.getProductDescription());
+        textView_productDescription.setText(String.format("%d - %s", currentPickingProduct.getProductId(), currentPickingProduct.getProductDescription()));
         textView_saleOrderLineNumber.setText(Integer.toString(currentPickingProduct.getSaleOrderLineNumber()));
-        textView_amountInSaleOrderLine.setText(String.format("%d de %d (cajas añadidas)", currentPickingProduct.getSaleOrderLinePickedUnits(), currentPickingProduct.getSaleOrderLineUnits()));
+        textView_amountInSaleOrderLine.setText(String.format("%d de %d cajas", currentPickingProduct.getSaleOrderLinePickedUnits(), currentPickingProduct.getSaleOrderLineUnits()));
 
         crossfadeViews(readBarcodeView, allDataView);
 
@@ -401,7 +377,7 @@ public class AddProductActivity extends AppCompatActivity implements View.OnClic
 
         Type productStockListType = new TypeToken<List<ProductStock>>(){}.getType();
 
-        GsonRequest<List<ProductStock>> gsonRequest = new GsonRequest<>(Request.Method.GET, url, productStockListType, null, new Response.Listener<List<ProductStock>>() {
+        GsonRequest<List<ProductStock>> gsonRequest = new GsonRequest<>(Request.Method.GET, url, productStockListType, null, null, new Response.Listener<List<ProductStock>>() {
 
             @Override
             public void onResponse(List<ProductStock> response) {
@@ -419,7 +395,7 @@ public class AddProductActivity extends AppCompatActivity implements View.OnClic
         if (productStockList.isEmpty()){
             textView_stockMessage.setText("No hay stock");
             textView_stockMessage.setVisibility(View.VISIBLE);
-            stockTableLayout.setVisibility(View.GONE);
+            stockTableLayout.setVisibility(View.INVISIBLE);
         } else if (!openSelectStockActivity && productStockList.size() == 1){
             setCurrentProductStock(productStockList.get(0));
             showToast("Se ha asignado el stock automáticamente porque sólo hay un lote/ubicación");
@@ -427,7 +403,7 @@ public class AddProductActivity extends AppCompatActivity implements View.OnClic
         else if (productStockList.size() > 1) {
             textView_stockMessage.setText("Stock no seleccionado");
             textView_stockMessage.setVisibility(View.VISIBLE);
-            stockTableLayout.setVisibility(View.GONE);
+            stockTableLayout.setVisibility(View.INVISIBLE);
 
             openSelectStockActivity = true;
         }
@@ -454,7 +430,7 @@ public class AddProductActivity extends AppCompatActivity implements View.OnClic
         textView_lot.setText(currentProductStock.getLot());
         textView_expirationDate.setText(new SimpleDateFormat("dd-MM-yyyy").format(currentProductStock.getExpirationDate()));
         Integer intValueOfAmount = Double.valueOf(currentProductStock.getAmount()).intValue();
-        textView_amountInSourceWarehouse.setText(String.format("%d cajas", Integer.toString(intValueOfAmount)));
+        textView_amountInSourceWarehouse.setText(String.format("%d cajas", intValueOfAmount));
 
         checkAndEnableConfirmButton();
     }
@@ -462,7 +438,7 @@ public class AddProductActivity extends AppCompatActivity implements View.OnClic
     private void clearSelectedProductStock() {
         currentProductStock = null;
 
-        stockTableLayout.setVisibility(View.GONE);
+        stockTableLayout.setVisibility(View.INVISIBLE);
         textView_stockMessage.setVisibility(View.VISIBLE);
         textView_stockMessage.setText("Stock no seleccionado");
 
@@ -486,23 +462,39 @@ public class AddProductActivity extends AppCompatActivity implements View.OnClic
     }
 
     private void confirm() {
-        String url = getString(R.string.baseUrl)
-                + "products/withCode?pickingHeaderId=" + currentPickingHeader.getId()
-                + "&productId=" + editText_productCode.getText();
+        String url = getString(R.string.baseUrl) + "palletLines";
 
-        showProgressDialog("Buscando artículo...");
+        showProgressDialog("Añadiendo artículo...");
 
-        GsonRequest<PickingResponse> gsonRequest = new GsonRequest<>(Request.Method.GET, url, PickingResponse.class, null, new Response.Listener<PickingResponse>() {
+        JSONObject jsonBody = new JSONObject();
+        String mRequestBody = null;
+
+        try {
+            jsonBody.put("PickingPalletId", currentPickingPallet.getId());
+            jsonBody.put("SaleOrderLineId", currentPickingProduct.getSaleOrderLineId());
+            jsonBody.put("ProductId", currentPickingProduct.getProductId());
+            jsonBody.put("Lot", currentProductStock.getLot());
+            jsonBody.put("ExpirationDate", getDateParsedForJsonBody(currentProductStock.getExpirationDate()));
+            jsonBody.put("SourceWarehouseId", currentProductStock.getWarehouseId());
+            jsonBody.put("Amount", Integer.parseInt(editText_amount.getText().toString()));
+            jsonBody.put("UserId", 1);
+            mRequestBody = jsonBody.toString();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        GsonRequest<PickingResponse> gsonRequest = new GsonRequest<>(Request.Method.POST, url, PickingResponse.class, null, mRequestBody, new Response.Listener<PickingResponse>() {
 
             @Override
             public void onResponse(PickingResponse response) {
                 if (response.isSuccess()){
                     hideKeyboard();
-                    editText_productCode.setText("");
-                    handleReceivedPickingProducts(response.getPickingProducts());
+                    showToast("Artículo añadido correctamente");
+                    setResult(RESULT_OK);
+                    finish();
                 }
                 else {
-                    showToastWithErrorMessageFromResponse(response);
+                    showToastWithErrorMessageFromResponse("No se ha podido añadir el artículo en el palet por el siguiente motivo:\n\n", response);
                 }
 
                 hideProgressDialog();

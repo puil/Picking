@@ -1,31 +1,32 @@
 package com.lagranjafoods.picking;
 
-import android.app.ProgressDialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.android.volley.Request;
 import com.android.volley.Response;
-import com.android.volley.VolleyError;
+import com.lagranjafoods.picking.helpers.StringHelper;
 import com.lagranjafoods.picking.models.PalletStateEnum;
 import com.lagranjafoods.picking.models.PickingHeader;
 import com.lagranjafoods.picking.models.PickingPallet;
 import com.lagranjafoods.picking.models.PickingResponse;
+import com.lagranjafoods.picking.models.User;
 import com.lagranjafoods.picking.network.AppController;
 import com.lagranjafoods.picking.network.GsonRequest;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends BaseActivity {
+    TextView textView_userName;
     EditText editText_saleOrderNumber;
-    Button button;
-    ProgressDialog progressDialog;
+    Button button_find;
+    User currentUser;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,13 +34,16 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         editText_saleOrderNumber = findViewById(R.id.editSaleOrderNumber);
-        button = findViewById(R.id.find_button);
+        editText_saleOrderNumber.setOnEditorActionListener(editorActionListener);
 
-        progressDialog = new ProgressDialog(this, R.style.AppTheme_Dark_Dialog);
+        button_find = findViewById(R.id.find_button);
+
+        button_find.setOnClickListener(this);
 
         editText_saleOrderNumber.setText("21366");
 
         setupToolBar();
+        getCurrentUser();
     }
 
     private void setupToolBar(){
@@ -48,60 +52,70 @@ public class MainActivity extends AppCompatActivity {
 
         // Remove default title text
         getSupportActionBar().setDisplayShowTitleEnabled(false);
+        getSupportActionBar().setIcon(R.drawable.palet04);
 
         // Get access to the custom title view
         TextView mTitle = toolbar.findViewById(R.id.tvActivityTitle);
         mTitle.setText("Picking");
 
-        TextView textView_userName = toolbar.findViewById(R.id.tvUserName);
-        textView_userName.setText("");
+        textView_userName = toolbar.findViewById(R.id.tvUserName);
     }
 
-    private void showProgressDialog(String message){
-        progressDialog.setMessage(message);
-        progressDialog.show();
+    @Override
+    protected void pressedOnClick(View view) {
+        switch (view.getId()){
+            case R.id.find_button:
+                getPicking();
+                break;
+        }
     }
 
-    private void hideProgressDialog(){
-        progressDialog.dismiss();
-    }
-
-    private void showToastWithErrorMessageFromResponse(PickingResponse response){
-        showToastWithErrorMessageFromResponse("Error: \n\n", response);
-    }
-
-    private void showToastWithErrorMessageFromResponse(String message, PickingResponse response){
-        showToast(message + response.getErrorMessage());
-    }
-
-    private void showToast(String message){
-        Toast.makeText(getApplicationContext(), message, Toast.LENGTH_LONG).show();
-    }
-
-    Response.ErrorListener volleyErrorListener = new Response.ErrorListener() {
+    EditText.OnEditorActionListener editorActionListener = new EditText.OnEditorActionListener() {
 
         @Override
-        public void onErrorResponse(VolleyError error) {
-            String message = String.format("Error crítico:\n%s", error.getMessage());
-            Log.e("PalletsActivity", message);
-            showMessage(message);
-            hideProgressDialog();
+        public boolean onEditorAction(TextView textView, int actionId, KeyEvent keyEvent) {
+            if (actionId == EditorInfo.IME_ACTION_DONE) {
+                getPicking();
+                return true;
+            }
+            return false;
         }
     };
 
-    private void showMessage(String message){
-        Intent intent = new Intent(this, DisplayMessageActivity.class);
-        intent.putExtra(ExtraConstants.EXTRA_MESSAGE, message);
-        startActivity(intent);
+    private void getCurrentUser() {
+        final int currentUserId = getSharedPreferences("com.lagranjafoods.picking", MODE_PRIVATE).getInt(getString(R.string.preference_userId), 0);
+        String url = getString(R.string.usersEndpoint) + currentUserId;
+
+        GsonRequest<User> gsonRequest = new GsonRequest<>(Request.Method.GET, url, User.class, null, null, new Response.Listener<User>() {
+            @Override
+            public void onResponse(User response) {
+                if (response != null) {
+                    currentUser = response;
+                    textView_userName.setText(currentUser.getFullName());
+                } else {
+                    showToast("No se ha podido obtener el usuario desde el servidor");
+                }
+            }
+        }, volleyErrorListener);
+
+        AppController.getInstance(this).addToRequestQueue(gsonRequest);
     }
 
-    public void getPicking(View view) {
+    public void getPicking() {
+        if (!validate()) {
+            return;
+        }
+
+        if (StringHelper.isNullOrEmpty(editText_saleOrderNumber.getText().toString())){
+            showToast("Informa el número de pedido");
+            return;
+        }
+
         String url = getString(R.string.baseUrl) + "getOrCreate/" + editText_saleOrderNumber.getText();
 
         showProgressDialog("Cargando...");
 
-        GsonRequest<PickingResponse> gsonRequest = new GsonRequest<>(Request.Method.GET,
-                url, PickingResponse.class, null, new Response.Listener<PickingResponse>() {
+        GsonRequest<PickingResponse> gsonRequest = new GsonRequest<>(Request.Method.GET, url, PickingResponse.class, null, null, new Response.Listener<PickingResponse>() {
             @Override
             public void onResponse(PickingResponse response) {
                 if (response.isSuccess()) {
@@ -117,7 +131,24 @@ public class MainActivity extends AppCompatActivity {
         AppController.getInstance(this).addToRequestQueue(gsonRequest);
     }
 
+    private boolean validate() {
+        boolean valid = true;
+
+        String saleOrderNumber = editText_saleOrderNumber.getText().toString();
+
+        if (saleOrderNumber.isEmpty()) {
+            editText_saleOrderNumber.setError("introduce el número de pedido");
+            valid = false;
+        } else {
+            editText_saleOrderNumber.setError(null);
+        }
+
+        return valid;
+    }
+
     private void startActivityDependingOnPalletsCountInPickingHeader(PickingResponse pickingResponse){
+        hideKeyboard();
+
         PickingHeader pickingHeader = pickingResponse.getPickingHeader();
 
         if (pickingHeader.getPallets().isEmpty()){
