@@ -2,6 +2,7 @@ package com.lagranjafoods.picking;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
+import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
@@ -12,10 +13,12 @@ import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Toast;
 
 import com.android.volley.Response;
+import com.android.volley.TimeoutError;
 import com.android.volley.VolleyError;
 import com.lagranjafoods.picking.models.PickingResponse;
 
@@ -78,7 +81,11 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
 
         @Override
         public void onErrorResponse(VolleyError error) {
-            String message = String.format("Error crítico:\n\n%s", error.getMessage());
+            String message = String.format("Error recibido del servidor:\n\n%s", error.toString());
+
+            if (error instanceof TimeoutError)
+                message = "El servidor ha tardado más de 20 segundos en procesar la acción realizada. En principio no debería suceder, así que si ves este mensaje, contacta con el administrador. Anota la fecha y la hora actual para que se pueda trazar el problema de manera más eficiente.";
+
             Log.e(this.getClass().getName(), message);
             showMessage(message);
             hideProgressDialog();
@@ -97,6 +104,17 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
             InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
             imm.hideSoftInputFromWindow(view.getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
         }
+    }
+
+    public static void hideKeyboard(Activity activity) {
+        InputMethodManager imm = (InputMethodManager) activity.getSystemService(Activity.INPUT_METHOD_SERVICE);
+        //Find the currently focused view, so we can grab the correct window token from it.
+        View view = activity.getCurrentFocus();
+        //If no view currently has focus, create a new one, just so we can grab a window token from it
+        if (view == null) {
+            view = new View(activity);
+        }
+        imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
     }
 
     protected void crossfadeViews(final View viewFrom, final View viewTo) {
@@ -132,5 +150,11 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
         simpleDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
         return simpleDateFormat.format(date);
+    }
+
+    protected String getUrl(int endpointResourceId) {
+        String serverIp = getSharedPreferences("com.lagranjafoods.picking", MODE_PRIVATE).getString(getString(R.string.preference_serverIp), null);
+        String url = "http://" + serverIp + "/" + getString(R.string.endpointPrefix) + "/" + getString(endpointResourceId) + "/";
+        return url;
     }
 }

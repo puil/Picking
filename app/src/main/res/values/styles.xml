@@ -54,5 +54,10 @@
     <style name="AppTheme.Dark.Dialog" parent="Theme.AppCompat.Dialog">
 
     </style>
+    
+    <style name="CustomPopupStyle" parent="ThemeOverlay.AppCompat.Light">
+        <item name="overlapAnchor">false</item>
+        <item name="android:dropDownVerticalOffset">-4dp</item>
+    </style>
 
 </resources>

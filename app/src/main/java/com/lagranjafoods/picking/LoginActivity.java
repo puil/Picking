@@ -10,6 +10,9 @@ import android.support.v7.widget.Toolbar;
 import android.util.Base64;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
@@ -19,9 +22,11 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.volley.AuthFailureError;
 import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.Request;
 import com.android.volley.Response;
+import com.android.volley.ServerError;
 import com.android.volley.VolleyError;
 import com.lagranjafoods.picking.network.AppController;
 import com.lagranjafoods.picking.network.CryptoHandler;
@@ -51,8 +56,10 @@ public class LoginActivity extends AppCompatActivity {
 
         setupToolBar();
 
-        _userText.setText("10");
-        _passwordText.setText("811");
+        //_userText.setText("10");
+        //_passwordText.setText("811");
+
+        setupServerIp();
     }
 
     /**
@@ -89,6 +96,42 @@ public class LoginActivity extends AppCompatActivity {
         mTitle.setText("Picking");
     }
 
+    private void setupServerIp() {
+        String defaultServerIp = getString(R.string.defaultServerIp);
+
+        String serverIp = getSharedPreferences("com.lagranjafoods.picking", MODE_PRIVATE).getString(getString(R.string.preference_serverIp), null);
+
+        if (serverIp == null)
+        {
+            serverIp = defaultServerIp;
+        }
+
+
+        SharedPreferences sharedPref = getSharedPreferences("com.lagranjafoods.picking", Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putString(getString(R.string.preference_serverIp), serverIp);
+        editor.commit();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.login_menu, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle item selection
+        switch (item.getItemId()) {
+            case R.id.menuItem_setServerIP:
+                setServerIP();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
     EditText.OnEditorActionListener editorActionListener = new EditText.OnEditorActionListener() {
         @Override
         public boolean onEditorAction(TextView textView, int actionId, KeyEvent keyEvent) {
@@ -117,12 +160,12 @@ public class LoginActivity extends AppCompatActivity {
             imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
         }
 
-        final ProgressDialog progressDialog = new ProgressDialog(LoginActivity.this, R.style.AppTheme_Dark_Dialog);
+        final ProgressDialog progressDialog = new ProgressDialog(LoginActivity.this, R.style.Theme_AppCompat_DayNight_Dialog);
         progressDialog.setIndeterminate(true);
         progressDialog.setMessage("Autenticando...");
         progressDialog.show();
 
-        String url = getString(R.string.loginEndpoint);
+        String url = getLoginUrl();
 
         StringWithHeadersRequest stringWithHeadersRequest = new StringWithHeadersRequest(
                 Request.Method.POST,
@@ -153,13 +196,14 @@ public class LoginActivity extends AppCompatActivity {
                     public void onErrorResponse(VolleyError error) {
                         Log.e("Error on login", "Error detail: " + error);
 
-                        if (error.getCause() instanceof SocketException)
-                        {
+                        if (error.getCause() instanceof SocketException) {
                             onServerUnreachable();
                         }
-                        else
-                        {
+                        else if (error instanceof AuthFailureError) {
                             onLoginFailed();
+                        }
+                        else {
+                            onServerErrorReceived(error);
                         }
 
                         progressDialog.dismiss();
@@ -182,6 +226,21 @@ public class LoginActivity extends AppCompatActivity {
         stringWithHeadersRequest.setRetryPolicy(new DefaultRetryPolicy(10000, DefaultRetryPolicy.DEFAULT_MAX_RETRIES, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
 
         AppController.getInstance(this).addToRequestQueue(stringWithHeadersRequest);
+    }
+
+    private VolleyError parseNetworkError(VolleyError volleyError){
+        if(volleyError.networkResponse != null && volleyError.networkResponse.data != null){
+            VolleyError error = new VolleyError(new String(volleyError.networkResponse.data));
+            volleyError = error;
+        }
+
+        return volleyError;
+    }
+
+    private String getLoginUrl() {
+        String serverIp = getSharedPreferences("com.lagranjafoods.picking", MODE_PRIVATE).getString(getString(R.string.preference_serverIp), null);
+        String url = "http://" + serverIp + "/login";
+        return url;
     }
 
     private String getEncodedPassword(){
@@ -219,6 +278,13 @@ public class LoginActivity extends AppCompatActivity {
         _loginButton.setEnabled(true);
     }
 
+    private void onServerErrorReceived(VolleyError error) {
+        Log.d(TAG, "onServerErrorReceived");
+        String missatgeError = "Error recibido del servidor: " + parseNetworkError(error);
+        Toast.makeText(getBaseContext(), missatgeError, Toast.LENGTH_LONG).show();
+        _loginButton.setEnabled(true);
+    }
+
     private void onServerUnreachable() {
         Log.d(TAG, "OnServerUnreachable");
         Toast.makeText(getBaseContext(), "No hay conexión con el servidor", Toast.LENGTH_LONG).show();
@@ -248,4 +314,10 @@ public class LoginActivity extends AppCompatActivity {
 
         return valid;
     }
+
+    private void setServerIP() {
+        Intent intent = new Intent(this, SetServerIpActivity.class);
+        startActivity(intent);
+    }
+
 }

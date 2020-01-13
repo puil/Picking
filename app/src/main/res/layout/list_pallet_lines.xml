@@ -8,13 +8,12 @@
     <!-- Amount -->
     <TextView
         android:id="@+id/tvAmount"
-        android:layout_width="35dp"
+        android:layout_width="50dp"
         android:layout_height="wrap_content"
-        android:layout_marginLeft="8dp"
         android:layout_marginStart="8dp"
         android:gravity="center"
         android:minWidth="50dp"
-        android:text="88"
+        android:text="200"
         android:textAlignment="center"
         android:textSize="30sp"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -62,6 +61,7 @@
                     android:id="@+id/lblLot"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginRight="15dp"
                     android:text="Lote:"
                     android:textColor="@color/monsoon" />
 
@@ -75,6 +75,7 @@
             </TableRow>
 
             <TableRow
+                android:id="@+id/expirationDateTableRow"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent">
 
@@ -96,6 +97,17 @@
             </TableRow>
 
         </TableLayout>
+
+        <TextView
+            android:id="@+id/lblCommercialProduct"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="* Producto de comercial"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tvProductDescription" />
+
     </android.support.constraint.ConstraintLayout>
 
     <!-- Delete button -->

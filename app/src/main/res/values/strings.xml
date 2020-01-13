@@ -3,4 +3,6 @@
     <string name="edit_saleOrderNumber">Número de pedido</string>
     <string name="button_find">Buscar</string>
     <string name="preference_userId">UserId</string>
+    <string name="preference_serverIp">ServerIp</string>
+    <string name="seeLogs">Ver logs</string>
 </resources>

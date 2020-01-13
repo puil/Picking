@@ -3,6 +3,7 @@ package com.lagranjafoods.picking;
 import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.util.SortedList;
 import android.support.v7.widget.Toolbar;
 import android.view.MenuItem;
 import android.view.View;
@@ -17,6 +18,8 @@ import com.lagranjafoods.picking.models.Warehouses;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 public class SelectStockActivity extends AppCompatActivity {
@@ -103,13 +106,15 @@ public class SelectStockActivity extends AppCompatActivity {
     }
 
     private void fillProductStockArrayLists() {
+
         for (ProductStock productStock : productStocks) {
-            if (productStock.getWarehouseId() == Warehouses.ManufacturingArea)
+            if (productStock.getWarehouseId() == Warehouses.MANUFACTURING_AREA)
                 manufacturingAreaProductStocks.add(productStock);
-            else if (productStock.getWarehouseId() == Warehouses.Warehouse)
+            else if (productStock.getWarehouseId() == Warehouses.WAREHOUSE)
                 warehouseProductStocks.add(productStock);
         }
     }
+
 
     private void setupManufacturingAreaListView(){
         manufacturingAreaListView = findViewById(R.id.manufacturingAreaList);

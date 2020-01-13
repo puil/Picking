@@ -2,9 +2,11 @@ package com.lagranjafoods.picking;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.support.v7.widget.Toolbar;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.MenuItem;
 import android.view.View;
@@ -15,6 +17,7 @@ import android.widget.ImageButton;
 import android.widget.TableLayout;
 import android.widget.TextView;
 
+import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.Request;
 import com.android.volley.Response;
 import com.google.gson.reflect.TypeToken;
@@ -37,6 +40,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class AddProductActivity extends BaseActivity {
+    private static final String TAG = "AddProductActivity";
+
     public static int SELECT_PICKING_PRODUCT_REQUESTCODE = 101;
     public static int SELECT_PRODUCT_STOCK_REQUESTCODE = 102;
 
@@ -241,6 +246,12 @@ public class AddProductActivity extends BaseActivity {
     EditText.OnEditorActionListener editorActionListener = new EditText.OnEditorActionListener() {
         @Override
         public boolean onEditorAction(TextView textView, int actionId, KeyEvent keyEvent) {
+
+            if (SystemClock.elapsedRealtime() - mLastClickTime < 1000) {
+                return false;
+            }
+            mLastClickTime = SystemClock.elapsedRealtime();
+
             if (actionId == EditorInfo.IME_ACTION_DONE) {
                 switch (textView.getId()){
                     case R.id.editProductCode:
@@ -267,7 +278,7 @@ public class AddProductActivity extends BaseActivity {
             return;
         }
 
-        String url = getString(R.string.baseUrl)
+        String url = getUrl(R.string.pickingEndpoint)
                 + "products/withBarcode?pickingHeaderId=" + currentPickingHeader.getId()
                 + "&barcodeNumber=" + barcodeNumber;
 
@@ -299,7 +310,7 @@ public class AddProductActivity extends BaseActivity {
             return;
         }
 
-        String url = getString(R.string.baseUrl)
+        String url = getUrl(R.string.pickingEndpoint)
                 + "products/withCode?pickingHeaderId=" + currentPickingHeader.getId()
                 + "&productId=" + editText_productCode.getText();
 
@@ -334,7 +345,15 @@ public class AddProductActivity extends BaseActivity {
 
         crossfadeViews(readBarcodeView, allDataView);
 
-        getAvailableStockSources(false);
+        if (currentPickingProduct.isProductIsCommercial()){
+            // No need to look for stock
+            textView_stockMessage.setText("El artículo es de comercial");
+            textView_stockMessage.setVisibility(View.VISIBLE);
+            stockTableLayout.setVisibility(View.INVISIBLE);
+            checkAndEnableConfirmButton();
+        } else {
+            getAvailableStockSources(false);
+        }
     }
 
     private void handleReceivedPickingProducts(List<PickingProduct> pickingProducts){
@@ -371,7 +390,7 @@ public class AddProductActivity extends BaseActivity {
      */
 
     public void getAvailableStockSources(final boolean forceOpeningSelectStockActivity) {
-        String url = getString(R.string.stockEndpoint) + "?warehouseIds=1&warehouseIds=2&product=" + currentPickingProduct.getProductId();
+        String url = getUrl(R.string.stockEndpoint) + "?warehouseIds=1&warehouseIds=2&product=" + currentPickingProduct.getProductId();
 
         showProgressDialog("Buscando stock...");
 
@@ -417,7 +436,10 @@ public class AddProductActivity extends BaseActivity {
     }
 
     private void selectSourceStock() {
-        getAvailableStockSources(true);
+        if (currentPickingProduct.isProductIsCommercial())
+            showToast("El artículo es de comercial. No hay gestión de stock para productos de comercial");
+        else
+            getAvailableStockSources(true);
     }
 
     private void setCurrentProductStock(ProductStock productStock){
@@ -427,10 +449,17 @@ public class AddProductActivity extends BaseActivity {
         textView_stockMessage.setVisibility(View.GONE);
 
         textView_sourceWarehouse.setText(Warehouses.getDescription(currentProductStock.getWarehouseId()));
-        textView_lot.setText(currentProductStock.getLot());
-        textView_expirationDate.setText(new SimpleDateFormat("dd-MM-yyyy").format(currentProductStock.getExpirationDate()));
         Integer intValueOfAmount = Double.valueOf(currentProductStock.getAmount()).intValue();
         textView_amountInSourceWarehouse.setText(String.format("%d cajas", intValueOfAmount));
+
+        if (currentProductStock.getExpirationDate() != null) {
+            textView_lot.setText(currentProductStock.getLot());
+            textView_expirationDate.setText(new SimpleDateFormat("dd-MM-yyyy").format(currentProductStock.getExpirationDate()));
+        }
+        else {
+            textView_lot.setText(currentProductStock.getLot());
+            textView_expirationDate.setText("-");
+        }
 
         checkAndEnableConfirmButton();
     }
@@ -455,14 +484,17 @@ public class AddProductActivity extends BaseActivity {
      */
 
     private void checkAndEnableConfirmButton() {
-        if (currentPickingProduct != null && currentProductStock != null && !StringHelper.isNullOrEmpty(editText_amount.getText().toString()))
+        if (currentPickingProduct != null
+                && ((!currentPickingProduct.isProductIsCommercial() && currentProductStock != null)
+                    || currentPickingProduct.isProductIsCommercial() && currentProductStock == null)
+                && !StringHelper.isNullOrEmpty(editText_amount.getText().toString()))
             button_confirm.setEnabled(true);
         else
             button_confirm.setEnabled(false);
     }
 
     private void confirm() {
-        String url = getString(R.string.baseUrl) + "palletLines";
+        String url = getUrl(R.string.pickingEndpoint) + "palletLines";
 
         showProgressDialog("Añadiendo artículo...");
 
@@ -473,15 +505,27 @@ public class AddProductActivity extends BaseActivity {
             jsonBody.put("PickingPalletId", currentPickingPallet.getId());
             jsonBody.put("SaleOrderLineId", currentPickingProduct.getSaleOrderLineId());
             jsonBody.put("ProductId", currentPickingProduct.getProductId());
-            jsonBody.put("Lot", currentProductStock.getLot());
-            jsonBody.put("ExpirationDate", getDateParsedForJsonBody(currentProductStock.getExpirationDate()));
-            jsonBody.put("SourceWarehouseId", currentProductStock.getWarehouseId());
             jsonBody.put("Amount", Integer.parseInt(editText_amount.getText().toString()));
             jsonBody.put("UserId", 1);
+
+            if (currentProductStock != null){
+                if (currentProductStock.getExpirationDate() != null) {
+                    jsonBody.put("ExpirationDate", getDateParsedForJsonBody(currentProductStock.getExpirationDate()));
+                }
+
+                jsonBody.put("Lot", currentProductStock.getLot());
+                jsonBody.put("SourceWarehouseId", currentProductStock.getWarehouseId());
+            }
+            else{
+                jsonBody.put("SourceWarehouseId", Warehouses.WAREHOUSE);
+            }
+
             mRequestBody = jsonBody.toString();
         } catch (JSONException e) {
             e.printStackTrace();
         }
+
+        Log.i(TAG, "Vaig a fer la crida a la url " + url + "\nEl jsonBody es:\n" + jsonBody.toString());
 
         GsonRequest<PickingResponse> gsonRequest = new GsonRequest<>(Request.Method.POST, url, PickingResponse.class, null, mRequestBody, new Response.Listener<PickingResponse>() {
 

@@ -1,16 +1,19 @@
 package com.lagranjafoods.picking.network;
 
 import android.content.Context;
+import android.util.Log;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.Volley;
 
 public class AppController {
+    private static final String TAG = "AppController";
 
     private static AppController mInstance;
     private static Context mCtx;
     private static String staticToken;
+    private static int staticRequestNumber = 0;
     private RequestQueue mRequestQueue;
     private String token;
 
@@ -36,6 +39,7 @@ public class AppController {
 
     public <T> void addToRequestQueue(final Request<T> request) {
         getRequestQueue().add(request);
+        Log.i(TAG, "Adding request to queue. Request: " + request.toString());
     }
 
     public <T> void addToRequestQueueWithTag(final Request<T> request, String tag) {
@@ -55,4 +59,6 @@ public class AppController {
         this.token = tokenValue;
         staticToken = tokenValue;
     }
+
+    public static int getStaticRequestNumber(){ return staticRequestNumber++; }
 }

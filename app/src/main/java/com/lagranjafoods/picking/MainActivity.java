@@ -1,12 +1,17 @@
 package com.lagranjafoods.picking;
 
+import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.support.v7.widget.Toolbar;
 import android.view.KeyEvent;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -40,10 +45,14 @@ public class MainActivity extends BaseActivity {
 
         button_find.setOnClickListener(this);
 
-        editText_saleOrderNumber.setText("21366");
+        //editText_saleOrderNumber.setText("30173");
 
         setupToolBar();
         getCurrentUser();
+
+        // Definir que es mostri el teclat quan el camp rep el focus
+        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0);
     }
 
     private void setupToolBar(){
@@ -62,6 +71,25 @@ public class MainActivity extends BaseActivity {
     }
 
     @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.main_menu, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle item selection
+        switch (item.getItemId()) {
+            case R.id.menuItem_seeLogs:
+                seeLogs();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
+    @Override
     protected void pressedOnClick(View view) {
         switch (view.getId()){
             case R.id.find_button:
@@ -74,6 +102,12 @@ public class MainActivity extends BaseActivity {
 
         @Override
         public boolean onEditorAction(TextView textView, int actionId, KeyEvent keyEvent) {
+
+            if (SystemClock.elapsedRealtime() - mLastClickTime < 1000) {
+                return false;
+            }
+            mLastClickTime = SystemClock.elapsedRealtime();
+
             if (actionId == EditorInfo.IME_ACTION_DONE) {
                 getPicking();
                 return true;
@@ -84,7 +118,7 @@ public class MainActivity extends BaseActivity {
 
     private void getCurrentUser() {
         final int currentUserId = getSharedPreferences("com.lagranjafoods.picking", MODE_PRIVATE).getInt(getString(R.string.preference_userId), 0);
-        String url = getString(R.string.usersEndpoint) + currentUserId;
+        String url = getUrl(R.string.usersEndpoint) + currentUserId;
 
         GsonRequest<User> gsonRequest = new GsonRequest<>(Request.Method.GET, url, User.class, null, null, new Response.Listener<User>() {
             @Override
@@ -111,7 +145,7 @@ public class MainActivity extends BaseActivity {
             return;
         }
 
-        String url = getString(R.string.baseUrl) + "getOrCreate/" + editText_saleOrderNumber.getText();
+        String url = getUrl(R.string.pickingEndpoint) + "getOrCreate/" + editText_saleOrderNumber.getText();
 
         showProgressDialog("Cargando...");
 
@@ -147,11 +181,12 @@ public class MainActivity extends BaseActivity {
     }
 
     private void startActivityDependingOnPalletsCountInPickingHeader(PickingResponse pickingResponse){
-        hideKeyboard();
+        hideKeyboard(this);
 
         PickingHeader pickingHeader = pickingResponse.getPickingHeader();
+        PickingPallet firstActivePallet = getFirstActivePallet(pickingHeader);
 
-        if (pickingHeader.getPallets().isEmpty()){
+        if (firstActivePallet == null){
             Intent intent = new Intent(this, PalletsActivity.class);
             intent.putExtra(ExtraConstants.EXTRA_PICKING_HEADER, pickingHeader);
             startActivity(intent);
@@ -159,7 +194,7 @@ public class MainActivity extends BaseActivity {
         else{
             Intent intent = new Intent(this, PalletContentActivity.class);
             intent.putExtra(ExtraConstants.EXTRA_PICKING_HEADER, pickingHeader);
-            intent.putExtra(ExtraConstants.EXTRA_PICKING_PALLET, getFirstActivePallet(pickingHeader));
+            intent.putExtra(ExtraConstants.EXTRA_PICKING_PALLET, firstActivePallet);
             startActivity(intent);
         }
     }
@@ -174,9 +209,11 @@ public class MainActivity extends BaseActivity {
             }
         }
 
-        if (firstAvailablePallet == null)
-            firstAvailablePallet = pickingHeader.getPallets().get(0);
-
         return firstAvailablePallet;
+    }
+
+    private void seeLogs(){
+        Intent intent = new Intent(this, SeeLogsActivity.class);
+        startActivity(intent);
     }
 }

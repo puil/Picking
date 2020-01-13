@@ -35,7 +35,8 @@ public enum PickingActionResultEnum {
     CantUndoPickingConfirmationBecauseItIsNotConfirmed(27, "El picking no está confirmado"),
     PalletStateIsNotCorrect(28, "El estado del palet no es el correcto"),
     PalletBarcodeIsNotCorrect(29, "El código de barras del palet no es correcto"),
-    ProductFoundWithProductCodeIsNotPresentInTheSaleOrder(30, "El artículo no se encuentra en el pedido o todas sus unidades ya se han añadido al picking");
+    ProductFoundWithProductCodeIsNotPresentInTheSaleOrder(30, "El artículo no se encuentra en el pedido o todas sus unidades ya se han añadido al picking"),
+    AmountCantBeDifferentThanAssortmentStock(31, "Cuando el artículo es un surtido, la cantidad introducida debe ser la cantidad total del lote seleccionado");
 
     private int value;
     private String message;

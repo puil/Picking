@@ -13,6 +13,7 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.Request;
 import com.android.volley.Response;
 import com.lagranjafoods.picking.adapters.PalletArrayAdapter;
@@ -33,6 +34,7 @@ public class PalletsActivity extends BaseActivity {
     Button button_addFirstPallet;
     Button button_addPallet;
     Button button_confirmPicking;
+    Button button_undoPickingConfirmation;
     android.support.design.widget.FloatingActionButton button_floatingAddPallet;
     ListView listView;
     PalletArrayAdapter palletArrayAdapter;
@@ -48,11 +50,13 @@ public class PalletsActivity extends BaseActivity {
         button_addPallet = findViewById(R.id.btnAddPallet);
         button_confirmPicking = findViewById(R.id.btnConfirmPicking);
         button_floatingAddPallet = findViewById(R.id.fbtnAddPallet);
+        button_undoPickingConfirmation = findViewById(R.id.btnUndoPickingConfirmation);
 
         button_addFirstPallet.setOnClickListener(this);
         button_addPallet.setOnClickListener(this);
         button_confirmPicking.setOnClickListener(this);
         button_floatingAddPallet.setOnClickListener(this);
+        button_undoPickingConfirmation.setOnClickListener(this);
 
         Intent intent = getIntent();
         pickingHeader = (PickingHeader)intent.getSerializableExtra(ExtraConstants.EXTRA_PICKING_HEADER);
@@ -60,7 +64,14 @@ public class PalletsActivity extends BaseActivity {
         setupToolBar();
         setupListView();
 
+        refreshButtonsVisibility();
+
         loadPallets();
+    }
+
+    private void refreshButtonsVisibility(){
+        button_undoPickingConfirmation.setVisibility(pickingHeader.isConfirmed() ? View.VISIBLE : View.GONE);
+        button_confirmPicking.setVisibility(pickingHeader.isConfirmed() ? View.GONE : View.VISIBLE);
     }
 
     private void setupToolBar(){
@@ -74,8 +85,7 @@ public class PalletsActivity extends BaseActivity {
         getSupportActionBar().setDisplayShowTitleEnabled(false);
 
         // Get access to the custom title view
-        TextView mTitle = toolbar.findViewById(R.id.tvActivityTitle);
-        mTitle.setText("Palets");
+        setToolbarTitle();
 
         textView_saleOrderNumber = findViewById(R.id.tvSaleOrderNumber);
         textView_saleOrderDate = findViewById(R.id.tvSaleOrderDate);
@@ -84,6 +94,21 @@ public class PalletsActivity extends BaseActivity {
         textView_saleOrderNumber.setText(Integer.toString(pickingHeader.getSaleOrderNumber()));
         textView_saleOrderDate.setText(new SimpleDateFormat("dd-MM-yyyy").format(pickingHeader.getSaleOrderDate()));
         textView_customerName.setText(pickingHeader.getCustomerName());
+    }
+
+    private void setToolbarTitle(){
+        Toolbar toolbar = findViewById(R.id.my_toolbar);
+        TextView mTitle = toolbar.findViewById(R.id.tvActivityTitle);
+        mTitle.setText(getToolbarTitle());
+    }
+
+    private String getToolbarTitle(){
+        String title = "Palets";
+
+        if (pickingHeader.isConfirmed())
+            title = title + " (Picking confirm.)";
+
+        return title;
     }
 
     private void setupListView() {
@@ -122,6 +147,10 @@ public class PalletsActivity extends BaseActivity {
             case R.id.btnConfirmPicking:
                 confirmPicking();
                 break;
+
+            case R.id.btnUndoPickingConfirmation:
+                undoPickingConfirmation();
+                break;
         }
     }
 
@@ -148,7 +177,7 @@ public class PalletsActivity extends BaseActivity {
      */
 
     private void loadPallets(){
-        String url = getString(R.string.baseUrl) + "pallets/" + pickingHeader.getId();
+        String url = getUrl(R.string.pickingEndpoint) + "pallets/" + pickingHeader.getId();
 
         showProgressDialog("Cargando...");
 
@@ -178,7 +207,7 @@ public class PalletsActivity extends BaseActivity {
      */
 
     private void addPallet() {
-        String url = getString(R.string.baseUrl) + "addNewPallet/" + pickingHeader.getId();
+        String url = getUrl(R.string.pickingEndpoint) + "addNewPallet/" + pickingHeader.getId();
 
         showProgressDialog("Añadiendo palet...");
 
@@ -206,7 +235,7 @@ public class PalletsActivity extends BaseActivity {
      */
 
     private void confirmPicking() {
-        String url = getString(R.string.baseUrl) + "confirmPicking/" + pickingHeader.getId();
+        String url = getUrl(R.string.pickingEndpoint) + "confirmPicking/" + pickingHeader.getId();
 
         showProgressDialog("Confirmando picking...");
 
@@ -226,6 +255,41 @@ public class PalletsActivity extends BaseActivity {
         }, volleyErrorListener);
 
         AppController.getInstance(this).addToRequestQueue(gsonRequest);
+    }
+
+    /*
+     * ----------------------------------------------------------------------------
+     * Undo picking confirmation
+     * ----------------------------------------------------------------------------
+     */
+
+    private void undoPickingConfirmation() {
+        String url = getUrl(R.string.pickingEndpoint) + "undoPickingConfirmation/" + pickingHeader.getId();
+
+        showProgressDialog("Anulando confirmación del picking...");
+
+        GsonRequest<PickingResponse> gsonRequest = new GsonRequest<>(Request.Method.POST, url, PickingResponse.class, null, null, new Response.Listener<PickingResponse>() {
+
+            @Override
+            public void onResponse(PickingResponse response) {
+                if (response.isSuccess()){
+                    showToast("Confirmación del picking anulada correctamente");
+                    handleUndoPickingConfirmationSuccessResponse();
+                }
+                else {
+                    showToastWithErrorMessageFromResponse("No se ha podido anular la confirmación del picking por el siguiente motivo:\n\n", response);
+                }
+                hideProgressDialog();
+            }
+        }, volleyErrorListener);
+
+        AppController.getInstance(this).addToRequestQueue(gsonRequest);
+    }
+
+    private void handleUndoPickingConfirmationSuccessResponse() {
+        pickingHeader.setConfirmed(false);
+        setToolbarTitle();
+        refreshButtonsVisibility();
     }
 
     /*
@@ -268,7 +332,7 @@ public class PalletsActivity extends BaseActivity {
     }
 
     private void performDeletePickingPallet(int pickingPalletId) {
-        String url = getString(R.string.baseUrl) + "pallets/" + pickingPalletId;
+        String url = getUrl(R.string.pickingEndpoint) + "pallets/" + pickingPalletId;
 
         showProgressDialog("Eliminando...");
 

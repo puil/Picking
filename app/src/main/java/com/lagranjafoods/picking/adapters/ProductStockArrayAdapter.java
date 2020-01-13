@@ -35,10 +35,16 @@ public class ProductStockArrayAdapter extends ArrayAdapter<ProductStock> {
         ProductStock productStock = values.get(position);
 
         TextView textView_lot = rowView.findViewById(R.id.tvLot);
-        textView_lot.setText(productStock.getLot());
-
         TextView textView_expirationDate = rowView.findViewById(R.id.tvExpirationDate);
-        textView_expirationDate.setText(new SimpleDateFormat("dd-MM-yyyy").format(productStock.getExpirationDate()));
+
+        if (productStock.getExpirationDate() != null) {
+            textView_lot.setText(productStock.getLot());
+            textView_expirationDate.setText(new SimpleDateFormat("dd-MM-yyyy").format(productStock.getExpirationDate()));
+        }
+        else {
+            textView_lot.setText(productStock.getLot());
+            textView_expirationDate.setText("-");
+        }
 
         TextView textView_amount = rowView.findViewById(R.id.tvAmount);
         Integer intValueOfAmount = Double.valueOf(productStock.getAmount()).intValue();

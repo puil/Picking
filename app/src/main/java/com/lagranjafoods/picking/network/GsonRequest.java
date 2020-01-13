@@ -1,6 +1,7 @@
 package com.lagranjafoods.picking.network;
 
 import com.android.volley.AuthFailureError;
+import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.NetworkResponse;
 import com.android.volley.ParseError;
 import com.android.volley.Request;
@@ -48,6 +49,8 @@ public class GsonRequest<T> extends Request<T> {
         this.headers = initializeHeadersIfNullAndAddToken(headers);
         this.mRequestBody = body;
 
+        this.setDefaultRetryPolicy();
+
         GsonBuilder gsonBuilder = new GsonBuilder();
         gsonBuilder.registerTypeAdapter(PalletStateEnum.class, new PalletStateDeserializer() );
         gsonBuilder.registerTypeAdapter(PickingActionResultEnum.class, new PickingActionResultDeserializer() );
@@ -66,11 +69,21 @@ public class GsonRequest<T> extends Request<T> {
         this.headers = initializeHeadersIfNullAndAddToken(headers);
         this.mRequestBody = body;
 
+        this.setDefaultRetryPolicy();
+
         GsonBuilder gsonBuilder = new GsonBuilder();
         gsonBuilder.registerTypeAdapter(PalletStateEnum.class, new PalletStateDeserializer() );
         gsonBuilder.registerTypeAdapter(PickingActionResultEnum.class, new PickingActionResultDeserializer() );
         gsonBuilder.registerTypeAdapter(Date.class, new DateDeserializer());
         gson = gsonBuilder.create();
+    }
+
+    private void setDefaultRetryPolicy(){
+
+        int timeoutMilliseconds = 20000;
+        int maxNumberRetries = 0;
+
+        setRetryPolicy(new DefaultRetryPolicy(timeoutMilliseconds, maxNumberRetries, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
     }
 
     private Map<String, String> initializeHeadersIfNullAndAddToken(Map<String, String> headersFromRequest) {
@@ -80,6 +93,11 @@ public class GsonRequest<T> extends Request<T> {
         if (!headersFromRequest.containsKey("Token")){
             String token = AppController.getStaticToken();
             headersFromRequest.put("Token", token);
+        }
+
+        if (!headersFromRequest.containsKey("RequestNumber")){
+            int requestNumber = AppController.getStaticRequestNumber();
+            headersFromRequest.put("RequestNumber", String.valueOf(requestNumber));
         }
 
         return headersFromRequest;

@@ -7,6 +7,8 @@
     <!-- Request to check Internet connection state -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
+    <uses-permission android:name="android.permission.READ_LOGS" />
+
     <application
         android:allowBackup="true"
         android:icon="@drawable/palet04"
@@ -21,23 +23,20 @@
             </intent-filter>
         </activity>
         <activity android:name=".MainActivity" />
-        <activity
-            android:name=".DisplayMessageActivity"
+        <activity android:name=".DisplayMessageActivity"
             android:parentActivityName=".MainActivity"
             android:theme="@style/AppTheme">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".MainActivity" />
         </activity>
-        <activity
-            android:name=".PalletContentActivity"
+        <activity android:name=".PalletContentActivity"
             android:parentActivityName=".MainActivity">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".MainActivity" />
         </activity>
-        <activity
-            android:name=".PalletsActivity"
+        <activity android:name=".PalletsActivity"
             android:parentActivityName=".MainActivity">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
@@ -45,7 +44,15 @@
         </activity>
         <activity android:name=".AddProductActivity" />
         <activity android:name=".SelectProductActivity" />
-        <activity android:name=".SelectStockActivity"></activity>
+        <activity android:name=".SelectStockActivity" />
+        <activity android:name=".SeeLogsActivity" />
+        <activity android:name=".SetServerIpActivity"
+            android:parentActivityName=".LoginActivity">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".LoginActivity" />
+        </activity>
+
     </application>
 
 </manifest>

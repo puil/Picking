@@ -16,7 +16,8 @@ public class PickingPalletLine {
     private int warehouseSourceId;
     private double amount;
     private String productDescription;
-
+    private boolean productIsAssortment;
+    private boolean productIsCommercial;
 
     public int getId() {
         return id;
@@ -88,5 +89,21 @@ public class PickingPalletLine {
 
     public void setProductDescription(String productDescription) {
         this.productDescription = productDescription;
+    }
+
+    public boolean isProductIsAssortment() {
+        return productIsAssortment;
+    }
+
+    public void setProductIsAssortment(boolean productIsAssortment) {
+        this.productIsAssortment = productIsAssortment;
+    }
+
+    public boolean isProductIsCommercial() {
+        return productIsCommercial;
+    }
+
+    public void setProductIsCommercial(boolean productIsCommercial) {
+        this.productIsCommercial = productIsCommercial;
     }
 }

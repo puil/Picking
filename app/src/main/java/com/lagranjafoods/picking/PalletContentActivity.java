@@ -11,8 +11,12 @@ import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import com.android.volley.AuthFailureError;
+import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.Request;
 import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
 import com.lagranjafoods.picking.adapters.PalletLineArrayAdapter;
 import com.lagranjafoods.picking.models.PalletStateEnum;
 import com.lagranjafoods.picking.models.PickingHeader;
@@ -24,7 +28,9 @@ import com.lagranjafoods.picking.network.GsonRequest;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class PalletContentActivity extends BaseActivity {
     public static int FINISH_ADDPRODUCTACTIVITY_REQUESTCODE = 100;
@@ -168,7 +174,7 @@ public class PalletContentActivity extends BaseActivity {
      */
 
     private void loadPalletLines(){
-        String url = getString(R.string.baseUrl) + "palletlines/" + currentPickingPallet.getId();
+        String url = getUrl(R.string.pickingEndpoint) + "palletlines/" + currentPickingPallet.getId();
 
         showProgressDialog("Cargando...");
 
@@ -192,7 +198,7 @@ public class PalletContentActivity extends BaseActivity {
 
     /*
      * ----------------------------------------------------------------------------
-     * Add pallet
+     * Add product
      * ----------------------------------------------------------------------------
      */
 
@@ -227,7 +233,7 @@ public class PalletContentActivity extends BaseActivity {
      */
 
     private void confirmPallet() {
-        String url = getString(R.string.baseUrl) + "confirmPallet/" + currentPickingPallet.getId();
+        String url = getUrl(R.string.pickingEndpoint) + "confirmPallet/" + currentPickingPallet.getId();
 
         showProgressDialog("Confirmando palet...");
 
@@ -236,16 +242,19 @@ public class PalletContentActivity extends BaseActivity {
             @Override
             public void onResponse(PickingResponse response) {
                 if (response.isSuccess()){
+                    hideProgressDialog();
                     showToast("Palet confirmado correctamente");
                     handlePalletConfirmationSuccessResponse();
                 }
                 else {
                     showToastWithErrorMessageFromResponse("No se ha podido confirmar el palet por el siguiente motivo:\n\n", response);
+                    hideProgressDialog();
                 }
 
-                hideProgressDialog();
             }
         }, volleyErrorListener);
+
+        gsonRequest.setRetryPolicy(new DefaultRetryPolicy(60000, 0, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
 
         AppController.getInstance(this).addToRequestQueue(gsonRequest);
     }
@@ -254,6 +263,43 @@ public class PalletContentActivity extends BaseActivity {
         currentPickingPallet.setState(PalletStateEnum.Confirmed);
         setToolbarTitle();
         refreshButtonsVisibility();
+        printReport();
+    }
+
+    private void printReport() {
+        String url = getUrl(R.string.pickingEndpoint) + "printConfirmedPallet/" + currentPickingPallet.getId();
+
+        showProgressDialog("Imprimiendo informe del palet...");
+
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, url, new Response.Listener<String>() {
+            @Override
+            public void onResponse(String response) {
+                boolean printed = Boolean.parseBoolean(response);
+                if (printed) {
+                    showToast("Informe enviado a la impresora correctamente");
+                }
+                else {
+                    showToast("No se ha podido enviar el impreso del palet a la impresora");
+                }
+
+                hideProgressDialog();
+            }
+        }, volleyErrorListener) {
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                HashMap<String, String> headers = new HashMap<>();
+
+                String token = AppController.getStaticToken();
+                headers.put("Token", token);
+
+                return headers;
+
+            }
+        };
+
+        stringRequest.setRetryPolicy(new DefaultRetryPolicy(60000, 0, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
+
+        AppController.getInstance(this).addToRequestQueue(stringRequest);
     }
 
     /*
@@ -263,7 +309,7 @@ public class PalletContentActivity extends BaseActivity {
      */
 
     private void undoPalletConfirmation() {
-        String url = getString(R.string.baseUrl) + "undoPalletConfirmation/" + currentPickingPallet.getId();
+        String url = getUrl(R.string.pickingEndpoint) + "undoPalletConfirmation/" + currentPickingPallet.getId();
 
         showProgressDialog("Anulando confirmación palet...");
 
@@ -282,6 +328,8 @@ public class PalletContentActivity extends BaseActivity {
                 hideProgressDialog();
             }
         }, volleyErrorListener);
+
+        gsonRequest.setRetryPolicy(new DefaultRetryPolicy(60000, 0, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
 
         AppController.getInstance(this).addToRequestQueue(gsonRequest);
     }
@@ -332,7 +380,7 @@ public class PalletContentActivity extends BaseActivity {
     }
 
     private void performDeletePickingPalletLine(int pickingPalletLineId) {
-        String url = getString(R.string.baseUrl) + "palletLines/" + pickingPalletLineId;
+        String url = getUrl(R.string.pickingEndpoint) + "palletLines/" + pickingPalletLineId;
 
         showProgressDialog("Eliminando...");
 

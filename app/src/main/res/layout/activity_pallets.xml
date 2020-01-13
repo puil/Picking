@@ -101,6 +101,16 @@
                 android:drawableLeft="@drawable/finished_work_32x32"
                 android:text="Confirmar&#10;picking"
                 android:textSize="14sp" />
+
+            <Button
+                android:id="@+id/btnUndoPickingConfirmation"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_gravity="center"
+                android:layout_weight="1"
+                android:drawableLeft="@drawable/undo_32x32"
+                android:text="Anular Confirmación Picking"
+                android:textSize="14sp" />
         </LinearLayout>
     </android.support.constraint.ConstraintLayout>
 </LinearLayout>

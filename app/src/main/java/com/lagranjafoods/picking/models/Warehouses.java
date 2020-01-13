@@ -5,17 +5,17 @@ package com.lagranjafoods.picking.models;
  */
 
 public class Warehouses {
-    public static final int ManufacturingArea = 1;
-    public static final int Warehouse = 2;
-    public static final int Shop = 3;
+    public static final int MANUFACTURING_AREA = 1;
+    public static final int WAREHOUSE = 2;
+    public static final int SHOP = 3;
 
     public static String getDescription(int warehouseId){
         switch (warehouseId){
-            case ManufacturingArea:
+            case MANUFACTURING_AREA:
                 return "Area fabricación";
-            case Warehouse:
+            case WAREHOUSE:
                 return "Almacén";
-            case Shop:
+            case SHOP:
                 return "Tienda";
             default:
                 return "ERROR";
